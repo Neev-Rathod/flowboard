@@ -16,49 +16,67 @@ docker compose down -v
 
 ## Railway Setup
 
-1. Initialize the local repository and connect it to your GitHub repo.
-2. Create the Railway project from the repo root:
+1. Create or connect the GitHub repo at `https://github.com/Neev-Rathod/flowboard`.
+2. Link the local directory to the existing Railway project:
 
 ```bash
-railway init
+railway link
 ```
 
-3. Add PostgreSQL for production data:
+3. Create the app services and database if they do not already exist:
 
 ```bash
+railway add --service backend
+railway add --service frontend
 railway add --database postgres
 ```
 
-4. Set backend environment variables in Railway:
+4. Wire each service to the GitHub repo and monorepo subdirectory:
 
 ```bash
-railway variable set SECRET_KEY=your-long-random-secret
-railway variable set ACCESS_TOKEN_EXPIRE_MINUTES=60
-railway variable set ALLOW_ALL_ORIGINS=true
+railway environment edit --service-config backend source.repo https://github.com/Neev-Rathod/flowboard.git
+railway environment edit --service-config backend source.branch main
+railway environment edit --service-config backend source.rootDirectory "/backend"
+railway environment edit --service-config backend build.builder DOCKERFILE
+
+railway environment edit --service-config frontend source.repo https://github.com/Neev-Rathod/flowboard.git
+railway environment edit --service-config frontend source.branch main
+railway environment edit --service-config frontend source.rootDirectory "/frontend"
+railway environment edit --service-config frontend build.builder DOCKERFILE
 ```
 
-5. After Railway gives the backend a public domain, set the frontend build variable on the frontend service:
+5. Set backend runtime variables:
 
 ```bash
-railway variable set VITE_API_URL=https://your-backend-domain.up.railway.app
+railway variable set SECRET_KEY=your-long-random-secret --service backend
+railway variable set ACCESS_TOKEN_EXPIRE_MINUTES=60 --service backend
+railway variable set ALLOW_ALL_ORIGINS=true --service backend
 ```
 
-6. For the backend CORS allow list, if you want to keep it strict instead of `ALLOW_ALL_ORIGINS=true`, set:
+6. Connect the backend to Railway Postgres:
 
 ```bash
-railway variable set FRONTEND_ORIGIN=https://your-frontend-domain.up.railway.app
+railway variable set DATABASE_URL='${{Postgres.DATABASE_URL}}' --service backend
 ```
 
-7. Deploy the current branch:
+7. Set the frontend API URL after the backend service gets a public Railway domain. The frontend image already defaults to the deployed backend URL used in this repo, so this step is optional unless your backend domain changes:
 
 ```bash
-railway up
+railway variable set API_BASE_URL=https://your-backend-domain.up.railway.app --service frontend
 ```
 
-8. Redeploy later after a GitHub push:
+8. Deploy the services:
 
 ```bash
-railway redeploy
+railway up --service backend --detach -m "initial backend deploy"
+railway up --service frontend --detach -m "initial frontend deploy"
+```
+
+9. Redeploy later after a GitHub push:
+
+```bash
+railway redeploy --service backend --from-source --yes
+railway redeploy --service frontend --from-source --yes
 ```
 
 ## Database Commands
@@ -79,6 +97,6 @@ railway logs --build
 
 ## Frontend and Backend URLs
 
-- Frontend browser requests should point to `VITE_API_URL`.
+- Frontend browser requests should point to `API_BASE_URL`, which is injected at runtime by the frontend container and defaults to the deployed backend URL in this repo.
 - Backend CORS should allow the frontend domain via `FRONTEND_ORIGIN` or use `ALLOW_ALL_ORIGINS=true` for bearer-token API traffic.
 - In local development, the default values already work with `http://localhost:5173` and `http://localhost:8000`.

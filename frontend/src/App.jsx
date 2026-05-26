@@ -1,6 +1,9 @@
 import { useEffect, useMemo, useState } from "react";
 
+const runtimeConfig = window.__FLOWBOARD_CONFIG__ || {};
+
 const API_BASE =
+  runtimeConfig.apiBase ||
   import.meta.env.VITE_API_URL ||
   `${window.location.protocol}//${window.location.hostname}:8000`;
 

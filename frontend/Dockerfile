@@ -1,13 +1,10 @@
-FROM node:18-alpine AS build
+FROM node:20-alpine AS build
 
 WORKDIR /app
 
-ARG VITE_API_URL=http://localhost:8000
-ENV VITE_API_URL=${VITE_API_URL}
-
 # Install dependencies first (for better caching)
 COPY package.json package-lock.json ./
-RUN npm ci
+RUN npm install
 
 # Build the project
 COPY . .
@@ -16,8 +13,10 @@ RUN npm run build
 # Serve with Nginx
 FROM nginx:alpine
 COPY --from=build /app/dist /usr/share/nginx/html
+COPY docker-entrypoint.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
 
-# Expose port 80
-EXPOSE 80
+# Expose the Railway runtime port used by the generated Nginx config
+EXPOSE 8080
 
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["/docker-entrypoint.sh"]
