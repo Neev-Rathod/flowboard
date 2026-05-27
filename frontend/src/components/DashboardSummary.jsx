@@ -5,7 +5,6 @@ import { Card, CardContent } from "./ui/card";
 
 const cards = [
   { key: "workflow_count", label: "Workflows" },
-  { key: "run_count", label: "Runs" },
   { key: "task_count", label: "Tasks" },
   { key: "completed_task_count", label: "Completed" },
   { key: "overdue_task_count", label: "Overdue" },

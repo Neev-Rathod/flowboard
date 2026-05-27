@@ -1,6 +1,13 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { CheckCircle2, Lock, Play, Sparkles, User, Clock, AlertTriangle } from "lucide-react";
+import {
+  CheckCircle2,
+  Lock,
+  Play,
+  User,
+  Clock,
+  AlertTriangle,
+} from "lucide-react";
 
 import { useAuth } from "../context/AuthContext";
 import { Badge } from "../components/ui/badge";
@@ -14,7 +21,7 @@ import {
 
 export function RunBoardPage() {
   const { apiBase, token } = useAuth();
-  const { runId } = useParams();
+  const { workflowId } = useParams();
   const [board, setBoard] = useState(null);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -27,8 +34,8 @@ export function RunBoardPage() {
 
   // SEO & Page Titles
   useEffect(() => {
-    document.title = `Run #${runId} Status Board | Flowboard`;
-    
+    document.title = `Workflow #${workflowId} Board | Flowboard`;
+
     // Manage meta description
     let metaDesc = document.querySelector('meta[name="description"]');
     if (!metaDesc) {
@@ -38,17 +45,17 @@ export function RunBoardPage() {
     }
     metaDesc.setAttribute(
       "content",
-      `Flowboard run #${runId} interactive kanban board. Unlock stages sequentially to complete high-fidelity business pipelines.`
+      `Flowboard workflow #${workflowId} interactive kanban board. Unlock stages sequentially to complete high-fidelity business pipelines.`,
     );
-  }, [runId]);
+  }, [workflowId]);
 
   const loadData = async () => {
     try {
       const [boardRes, usersRes] = await Promise.all([
-        fetch(`${apiBase}/workflows/runs/${runId}`, { headers }),
+        fetch(`${apiBase}/workflows/${workflowId}/board`, { headers }),
         fetch(`${apiBase}/organization/users`, { headers }),
       ]);
-      
+
       if (!boardRes.ok) throw new Error("Failed to load workflow run board");
       if (!usersRes.ok) throw new Error("Failed to load user directories");
 
@@ -63,13 +70,13 @@ export function RunBoardPage() {
 
   useEffect(() => {
     loadData();
-  }, [apiBase, runId, token]);
+  }, [apiBase, token, workflowId]);
 
   const completeTask = async (taskId) => {
     setCompletingTaskId(taskId);
     try {
       const response = await fetch(
-        `${apiBase}/workflows/runs/${runId}/tasks/${taskId}/complete`,
+        `${apiBase}/workflows/${workflowId}/tasks/${taskId}/complete`,
         {
           method: "POST",
           headers,
@@ -97,11 +104,28 @@ export function RunBoardPage() {
     return (
       <div className="flex h-64 items-center justify-center text-slate-300">
         <div className="flex flex-col items-center gap-3">
-          <svg className="animate-spin h-8 w-8 text-sky-400" viewBox="0 0 24 24" fill="none">
-            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+          <svg
+            className="animate-spin h-8 w-8 text-sky-400"
+            viewBox="0 0 24 24"
+            fill="none"
+          >
+            <circle
+              className="opacity-25"
+              cx="12"
+              cy="12"
+              r="10"
+              stroke="currentColor"
+              strokeWidth="4"
+            />
+            <path
+              className="opacity-75"
+              fill="currentColor"
+              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+            />
           </svg>
-          <span className="text-sm font-semibold">Loading Kanban Run Board...</span>
+          <span className="text-sm font-semibold">
+            Loading Kanban Run Board...
+          </span>
         </div>
       </div>
     );
@@ -113,24 +137,26 @@ export function RunBoardPage() {
         <div className="flex flex-col items-center gap-2">
           <AlertTriangle className="h-8 w-8 text-rose-400" />
           <h2 className="text-lg font-bold">Run Not Found</h2>
-          <p className="text-xs text-slate-400">The requested workflow run board could not be loaded. Verify details.</p>
+          <p className="text-xs text-slate-400">
+            The requested workflow run board could not be loaded. Verify
+            details.
+          </p>
         </div>
       </Card>
     );
   }
 
   return (
-    <main className="space-y-6 animate-fade-in" id="run-board-main">
-      {/* Top Banner Status */}
+    <main className="space-y-6 animate-fade-in" id="workflow-board-main">
       <Card className="relative overflow-hidden border border-white/10 bg-slate-950/40 backdrop-blur-md shadow-2xl">
         <div className="absolute inset-0 bg-gradient-to-r from-sky-500/5 via-indigo-500/5 to-transparent pointer-events-none" />
         <CardHeader className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-2">
             <div className="flex flex-wrap items-center gap-3">
-              <Badge 
+              <Badge
                 variant={board.status === "completed" ? "success" : "outline"}
                 className={`px-3 py-0.5 rounded-full text-xs font-bold uppercase tracking-wide border-none ${
-                  board.status === "completed" 
+                  board.status === "completed"
                     ? "bg-emerald-500/15 text-emerald-300"
                     : "bg-sky-500/15 text-sky-300 animate-pulse"
                 }`}
@@ -142,16 +168,20 @@ export function RunBoardPage() {
               </h1>
             </div>
             <p className="text-xs text-slate-400 max-w-xl">
-              Active Run ID #{board.id} — Sequential stage locks guarantee step-by-step progress. Completing all tasks in a stage unlocks the next step dynamically.
+              Workflow board #{board.id} — Sequential stage locks guarantee
+              step-by-step progress. Completing all tasks in a stage unlocks the
+              next step dynamically.
             </p>
           </div>
-          
+
           <div className="flex items-center gap-3 text-xs text-slate-400 border border-white/5 bg-slate-950/60 rounded-2xl px-4 py-3 shrink-0">
             <Clock className="h-4 w-4 text-sky-400" />
             <div>
               <p className="font-semibold text-white">Started</p>
               <p className="mt-0.5 text-[10px]">
-                {board.started_at ? new Date(board.started_at).toLocaleString() : "Date unknown"}
+                {board.created_at
+                  ? new Date(board.created_at).toLocaleString()
+                  : "Date unknown"}
               </p>
             </div>
           </div>
@@ -159,16 +189,20 @@ export function RunBoardPage() {
       </Card>
 
       {/* Grid Columns for Stages */}
-      <div 
+      <div
         id="run-board-kanban-grid"
         className="grid gap-6 xl:grid-cols-[repeat(auto-fit,minmax(280px,1fr))]"
       >
         {board.stages.map((stage) => {
-          const statusText = stage.completed ? "Completed" : stage.locked ? "Locked" : "Active";
-          
+          const statusText = stage.completed
+            ? "Completed"
+            : stage.locked
+              ? "Locked"
+              : "Active";
+
           return (
-            <Card 
-              key={stage.id} 
+            <Card
+              key={stage.id}
               className={`relative flex flex-col border transition-all duration-300 rounded-3xl ${
                 stage.completed
                   ? "border-emerald-500/20 bg-slate-950/30"
@@ -183,13 +217,15 @@ export function RunBoardPage() {
                   <CardTitle className="text-base font-bold text-white tracking-tight">
                     {stage.title}
                   </CardTitle>
-                  <span className={`text-[10px] uppercase font-bold tracking-widest ${
-                    stage.completed 
-                      ? "text-emerald-400" 
-                      : stage.locked 
-                        ? "text-slate-500" 
-                        : "text-sky-300 font-extrabold flex items-center gap-1"
-                  }`}>
+                  <span
+                    className={`text-[10px] uppercase font-bold tracking-widest ${
+                      stage.completed
+                        ? "text-emerald-400"
+                        : stage.locked
+                          ? "text-slate-500"
+                          : "text-sky-300 font-extrabold flex items-center gap-1"
+                    }`}
+                  >
                     {!stage.completed && !stage.locked && (
                       <span className="h-1.5 w-1.5 rounded-full bg-sky-400 animate-ping" />
                     )}
@@ -215,11 +251,13 @@ export function RunBoardPage() {
               {/* Tasks List */}
               <CardContent className="p-4 flex-1 space-y-3 overflow-y-auto">
                 {stage.tasks.length === 0 ? (
-                  <p className="text-xs text-slate-500 italic text-center py-4">No tasks in this stage</p>
+                  <p className="text-xs text-slate-500 italic text-center py-4">
+                    No tasks in this stage
+                  </p>
                 ) : (
                   stage.tasks.map((task) => {
                     const assignee = getUserDetails(task.assigned_to);
-                    
+
                     return (
                       <div
                         key={task.id}
@@ -233,9 +271,13 @@ export function RunBoardPage() {
                       >
                         <div className="flex items-start justify-between gap-3">
                           <div className="space-y-1">
-                            <h3 className={`text-xs font-bold tracking-tight text-white ${
-                              task.status === "completed" ? "line-through text-slate-400" : ""
-                            }`}>
+                            <h3
+                              className={`text-xs font-bold tracking-tight text-white ${
+                                task.status === "completed"
+                                  ? "line-through text-slate-400"
+                                  : ""
+                              }`}
+                            >
                               {task.title}
                             </h3>
                             <p className="text-[10px] text-slate-400 leading-normal line-clamp-2">
@@ -243,7 +285,11 @@ export function RunBoardPage() {
                             </p>
                           </div>
                           <Badge
-                            variant={task.status === "completed" ? "success" : "outline"}
+                            variant={
+                              task.status === "completed"
+                                ? "success"
+                                : "outline"
+                            }
                             className="text-[9px] px-1.5 py-0.5 rounded-full shrink-0"
                           >
                             {task.status}
@@ -267,16 +313,24 @@ export function RunBoardPage() {
 
                         {/* Task Action Bar */}
                         <div className="flex items-center justify-between gap-3 pt-1">
-                          <span className={`text-[9px] uppercase tracking-wide font-bold ${
-                            task.priority === "high" ? "text-rose-400" : "text-slate-400"
-                          }`}>
+                          <span
+                            className={`text-[9px] uppercase tracking-wide font-bold ${
+                              task.priority === "high"
+                                ? "text-rose-400"
+                                : "text-slate-400"
+                            }`}
+                          >
                             Priority: {task.priority || "normal"}
                           </span>
-                          
+
                           <Button
                             type="button"
                             size="sm"
-                            variant={task.status === "completed" ? "secondary" : "default"}
+                            variant={
+                              task.status === "completed"
+                                ? "secondary"
+                                : "default"
+                            }
                             className={`h-8 rounded-xl text-[10px] font-bold px-3 transition-all duration-200 ${
                               task.status === "completed"
                                 ? "bg-white/5 text-slate-400"
@@ -284,14 +338,33 @@ export function RunBoardPage() {
                                   ? "bg-slate-900 border border-white/5 text-slate-500 cursor-not-allowed"
                                   : "bg-sky-500 hover:bg-sky-400 text-slate-950 shadow-md shadow-sky-500/10"
                             }`}
-                            disabled={task.status === "completed" || stage.locked || completingTaskId === task.task_id}
+                            disabled={
+                              task.status === "completed" ||
+                              stage.locked ||
+                              completingTaskId === task.task_id
+                            }
                             onClick={() => completeTask(task.task_id)}
                           >
                             {completingTaskId === task.task_id ? (
                               <span className="flex items-center gap-1">
-                                <svg className="animate-spin h-3.5 w-3.5 text-slate-950" viewBox="0 0 24 24" fill="none">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                <svg
+                                  className="animate-spin h-3.5 w-3.5 text-slate-950"
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                >
+                                  <circle
+                                    className="opacity-25"
+                                    cx="12"
+                                    cy="12"
+                                    r="10"
+                                    stroke="currentColor"
+                                    strokeWidth="4"
+                                  />
+                                  <path
+                                    className="opacity-75"
+                                    fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                                  />
                                 </svg>
                               </span>
                             ) : task.status === "completed" ? (

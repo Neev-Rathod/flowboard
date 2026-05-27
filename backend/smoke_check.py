@@ -18,7 +18,8 @@ def main() -> None:
         "/organization/tree",
         "/organization/users",
         "/workflows/",
-        "/workflows/runs",
+        "/workflows/{workflow_id}/board",
+        "/workflows/{workflow_id}/tasks/{task_id}/complete",
         "/workflows/dashboard/summary",
     ]
     for route_path in required_routes:
@@ -29,8 +30,6 @@ def main() -> None:
         "workflows",
         "workflow_stages",
         "tasks",
-        "workflow_runs",
-        "task_runs",
     }
     missing_tables = required_tables.difference(Base.metadata.tables.keys())
     if missing_tables:

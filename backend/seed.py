@@ -3,7 +3,7 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 from sqlalchemy.orm import Session
 
-from models import Company, Task, TaskRun, User, Workflow, WorkflowRun, WorkflowStage
+from models import Company, Task, User, Workflow, WorkflowStage
 from security import get_password_hash
 
 
@@ -220,8 +220,8 @@ def ensure_demo_seed(db: Session) -> bool:
             category=workflow_data["category"],
             company_id=company.id,
             created_by=creator.id,
-            is_template=True,
-            visibility="private",
+            is_template=False,
+            visibility="public",
         )
         db.add(workflow)
         db.flush()
@@ -253,24 +253,6 @@ def ensure_demo_seed(db: Session) -> bool:
                 )
                 db.add(task)
         db.flush()
-
-        workflow_run = WorkflowRun(
-            workflow_id=workflow.id,
-            started_by=creator.id,
-            assigned_to=creator.id,
-            status="running",
-        )
-        db.add(workflow_run)
-        db.flush()
-
-        for task in db.query(Task).join(WorkflowStage).filter(WorkflowStage.workflow_id == workflow.id).all():
-            db.add(
-                TaskRun(
-                    workflow_run_id=workflow_run.id,
-                    task_id=task.id,
-                    status=task.status,
-                )
-            )
 
     db.commit()
     return True

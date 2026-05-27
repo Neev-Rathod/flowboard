@@ -2,7 +2,6 @@ import { useState } from "react";
 import { Plus } from "lucide-react";
 
 import { Button } from "./ui/button";
-import { Checkbox } from "./ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -44,8 +43,8 @@ const emptyDraft = (users = []) => ({
   title: "New workflow",
   description: "",
   category: "",
-  visibility: "private",
-  is_template: true,
+  visibility: "public",
+  is_template: false,
   stages: [
     {
       id: makeId(),
@@ -124,8 +123,8 @@ function workflowToDraft(workflow, users = []) {
     title: workflow.title || "Untitled workflow",
     description: workflow.description || "",
     category: workflow.category || "",
-    visibility: workflow.visibility || "private",
-    is_template: workflow.is_template ?? true,
+    visibility: workflow.visibility || "public",
+    is_template: workflow.is_template ?? false,
     stages: (workflow.stages || []).map((stage, stageIndex) => ({
       id: stage.id,
       title: stage.title,
@@ -175,7 +174,16 @@ function findSelection(workflow, selectedNodeId) {
   return null;
 }
 
-function TaskEditorDialog({ open, task, stageTitle, users, onClose, onSave }) {
+function TaskEditorDialog({
+  open,
+  task,
+  stageTitle,
+  users,
+  onClose,
+  onSave,
+  onDelete,
+  canDelete = false,
+}) {
   const [draft, setDraft] = useState(() => task ?? blankTask(users));
 
   const updateField = (field, value) => {
@@ -184,7 +192,10 @@ function TaskEditorDialog({ open, task, stageTitle, users, onClose, onSave }) {
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-lg rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl">
+      <DialogContent
+        onClose={() => onClose(false)}
+        className="max-w-lg rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl"
+      >
         <div className="border-b border-zinc-200 px-6 py-5">
           <DialogHeader className="text-left">
             <DialogTitle className="text-xl font-semibold text-zinc-950">
@@ -275,23 +286,149 @@ function TaskEditorDialog({ open, task, stageTitle, users, onClose, onSave }) {
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-6 pb-6 pt-4">
-          <Button
-            type="button"
-            variant="outline"
-            onClick={() => onClose(false)}
-          >
-            Cancel
-          </Button>
-          <Button
-            type="button"
-            onClick={() => {
-              onSave?.(draft);
-              onClose(false);
-            }}
-          >
-            Save task
-          </Button>
+        <div className="flex flex-col gap-3 border-t border-zinc-200 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onDelete?.(draft)}
+            >
+              Delete task
+            </Button>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex items-center gap-2 self-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onClose(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                onSave?.(draft);
+                onClose(false);
+              }}
+            >
+              Save task
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function StageEditorDialog({
+  open,
+  stage,
+  onClose,
+  onSave,
+  onDelete,
+  canDelete = false,
+}) {
+  const [draft, setDraft] = useState(() => stage);
+
+  if (!draft) return null;
+
+  const updateField = (field, value) => {
+    setDraft((current) => ({ ...current, [field]: value }));
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onClose}>
+      <DialogContent
+        onClose={() => onClose(false)}
+        className="max-w-lg rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl"
+      >
+        <div className="border-b border-zinc-200 px-6 py-5">
+          <DialogHeader className="text-left">
+            <DialogTitle className="text-xl font-semibold text-zinc-950">
+              Edit stage
+            </DialogTitle>
+            <DialogDescription className="text-zinc-500">
+              Update the stage title, color, and completion rule.
+            </DialogDescription>
+          </DialogHeader>
+        </div>
+
+        <div className="space-y-4 p-6">
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Stage title
+            </label>
+            <Input
+              value={draft.title}
+              onChange={(event) => updateField("title", event.target.value)}
+              placeholder="Stage title"
+            />
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Accent color
+            </label>
+            <Select
+              value={draft.color || stageColors[0]}
+              onChange={(event) => updateField("color", event.target.value)}
+            >
+              {stageColors.map((color) => (
+                <option key={color} value={color}>
+                  {color}
+                </option>
+              ))}
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              Completion rule
+            </label>
+            <Select
+              value={draft.completion_rule || ""}
+              onChange={(event) =>
+                updateField("completion_rule", event.target.value)
+              }
+            >
+              <option value="">Sequential</option>
+              <option value="parallel">Parallel</option>
+            </Select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-3 border-t border-zinc-200 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          {canDelete ? (
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={() => onDelete?.(draft)}
+            >
+              Delete stage
+            </Button>
+          ) : (
+            <span />
+          )}
+
+          <div className="flex items-center gap-2 self-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onClose(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                onSave?.(draft);
+                onClose(false);
+              }}
+            >
+              Save stage
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>
@@ -310,6 +447,10 @@ function WorkflowModalEditor({
     open: false,
     stageId: null,
     taskId: null,
+  });
+  const [stageEditor, setStageEditor] = useState({
+    open: false,
+    stageId: null,
   });
 
   const updateWorkflowField = (field, value) => {
@@ -355,10 +496,48 @@ function WorkflowModalEditor({
     setTaskEditor({ open: true, stageId, taskId });
   };
 
+  const openStageEditor = (stageId) => {
+    setStageEditor({ open: true, stageId });
+  };
+
+  const removeTask = (stageId, taskId) => {
+    setDraft((current) => ({
+      ...current,
+      stages: current.stages.map((stage) =>
+        String(stage.id) === String(stageId)
+          ? {
+              ...stage,
+              tasks: stage.tasks.filter(
+                (task) => String(task.id) !== String(taskId),
+              ),
+            }
+          : stage,
+      ),
+    }));
+    setTaskEditor({ open: false, stageId: null, taskId: null });
+  };
+
+  const removeStage = (stageId) => {
+    setDraft((current) => {
+      const nextStages = current.stages.filter(
+        (stage) => String(stage.id) !== String(stageId),
+      );
+
+      return {
+        ...current,
+        stages: nextStages.length ? nextStages : [createStage(users, 0)],
+      };
+    });
+    setStageEditor({ open: false, stageId: null });
+  };
+
   const activeStage = draft.stages.find(
     (stage) => String(stage.id) === String(taskEditor.stageId),
   );
   const activeTask = findSelection(draft, taskEditor.taskId)?.item ?? null;
+  const editableStage = draft.stages.find(
+    (stage) => String(stage.id) === String(stageEditor.stageId),
+  );
 
   const submit = async (event) => {
     event.preventDefault();
@@ -394,10 +573,13 @@ function WorkflowModalEditor({
           <div className="relative flex-1 p-4">
             <WorkflowCanvas
               workflow={draft}
+              users={users}
               onAddTask={openTaskEditor}
               onNodeSelect={(node) => {
                 if (node.data?.kind === "task") {
                   openTaskEditor(node.data.stageId, node.data.taskId);
+                } else if (node.data?.kind === "stage") {
+                  openStageEditor(node.data.stageId);
                 }
               }}
             />
@@ -407,17 +589,7 @@ function WorkflowModalEditor({
             </div>
           </div>
 
-          <div className="flex items-center justify-between border-t border-zinc-200 px-4 py-3">
-            <div className="flex items-center gap-2 text-sm text-zinc-500">
-              <Checkbox
-                checked={draft.is_template}
-                onCheckedChange={(checked) =>
-                  updateWorkflowField("is_template", Boolean(checked))
-                }
-              />
-              <span>Save as reusable template</span>
-            </div>
-
+          <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-3">
             <Button
               type="button"
               variant="outline"
@@ -434,6 +606,7 @@ function WorkflowModalEditor({
           task={activeTask}
           stageTitle={activeStage?.title}
           users={users}
+          canDelete={Boolean(taskEditor.taskId)}
           onClose={(nextOpen) =>
             setTaskEditor((current) => ({ ...current, open: nextOpen }))
           }
@@ -447,6 +620,26 @@ function WorkflowModalEditor({
 
             addTask(taskEditor.stageId, nextTask);
           }}
+          onDelete={() => removeTask(taskEditor.stageId, taskEditor.taskId)}
+        />
+
+        <StageEditorDialog
+          key={`${stageEditor.stageId ?? "none"}-${stageEditor.open ? "open" : "closed"}`}
+          open={stageEditor.open}
+          stage={editableStage}
+          canDelete={Boolean(stageEditor.stageId)}
+          onClose={(nextOpen) =>
+            setStageEditor((current) => ({ ...current, open: nextOpen }))
+          }
+          onSave={(stageDraft) => {
+            setDraft((current) => ({
+              ...current,
+              stages: current.stages.map((stage) =>
+                String(stage.id) === String(stageDraft.id) ? stageDraft : stage,
+              ),
+            }));
+          }}
+          onDelete={() => removeStage(stageEditor.stageId)}
         />
       </DialogContent>
     </Dialog>

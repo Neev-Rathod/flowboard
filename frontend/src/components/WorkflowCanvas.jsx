@@ -149,12 +149,13 @@ function priorityAccent(priority) {
   return priorityColors[priority || "normal"] || priorityColors.normal;
 }
 
-function buildGraph(workflow) {
+function buildGraph(workflow, users = []) {
   const stages = workflow?.stages || [];
   const nodes = [];
   const edges = [];
   const stageGap = 320;
   const stageBaseX = 80;
+  const userLookup = new Map(users.map((user) => [String(user.id), user]));
 
   stages.forEach((stage, stageIndex) => {
     const stageId = `stage-${stage.id ?? stageIndex}`;
@@ -171,12 +172,14 @@ function buildGraph(workflow) {
         kind: "stage",
         stageId: stage.id ?? stageIndex,
         title: stage.title,
+        details: stage.completion_rule || "Sequential stage",
         description:
           stage.completion_rule ||
           `${tasks.length} linked task${tasks.length === 1 ? "" : "s"}`,
         label: `Stage ${stageIndex + 1}`,
         accent: stageAccent,
         badge: `${tasks.length} task${tasks.length === 1 ? "" : "s"}`,
+        taskCount: tasks.length,
       },
     });
 
@@ -186,6 +189,8 @@ function buildGraph(workflow) {
         stageX + (taskIndex - Math.max(tasks.length - 1, 0) / 2) * 220;
       const taskY = 250 + Math.floor(taskIndex / 3) * 120;
 
+      const assignee = userLookup.get(String(task.assigned_to));
+
       nodes.push({
         id: taskId,
         type: "workflowNode",
@@ -193,15 +198,22 @@ function buildGraph(workflow) {
         data: {
           kind: "task",
           stageId: stage.id ?? stageIndex,
+          stageTitle: stage.title,
           taskId: task.id ?? taskIndex,
           title: task.title,
+          details: task.description || "No task description yet.",
           description: task.description || "No task description yet.",
           label: "Task",
           accent: priorityAccent(task.priority),
           badge: (task.priority || "normal").toUpperCase(),
-          meta: task.assigned_to
-            ? `Assignee ${task.assigned_to}`
+          meta: assignee
+            ? `${assignee.username}${assignee.job_title ? ` · ${assignee.job_title}` : ""}`
             : "Unassigned",
+          assigneeName: assignee?.username || "Unassigned",
+          assigneeTitle: assignee?.job_title || "",
+          assignedTo: task.assigned_to ?? null,
+          priority: task.priority || "normal",
+          dueDate: task.due_date || null,
         },
       });
 
@@ -237,6 +249,7 @@ function buildGraph(workflow) {
       data: {
         kind: "placeholder",
         stageId: stage.id ?? stageIndex,
+        stageTitle: stage.title,
         title: "Click to add a task",
         description: "Create a new node in this stage",
         label: `Add task to ${stage.title}`,
@@ -268,11 +281,12 @@ function buildGraph(workflow) {
 
 export function WorkflowCanvas({
   workflow,
+  users = [],
   selectedNodeId,
   onNodeSelect,
   onAddTask,
 }) {
-  const graph = useMemo(() => buildGraph(workflow), [workflow]);
+  const graph = useMemo(() => buildGraph(workflow, users), [workflow, users]);
   const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges);
 

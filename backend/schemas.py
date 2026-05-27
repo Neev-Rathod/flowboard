@@ -57,6 +57,7 @@ class TaskOut(TaskBase):
     id: int
     stage_id: int
     created_at: Optional[datetime]
+    completed_at: Optional[datetime]
 
 
 class StageBase(BaseModel):
@@ -83,7 +84,7 @@ class WorkflowBase(BaseModel):
     description: Optional[str] = None
     category: Optional[str] = None
     is_template: Optional[bool] = False
-    visibility: Optional[str] = "private"
+    visibility: Optional[str] = "public"
 
 
 class WorkflowCreate(WorkflowBase):
@@ -99,35 +100,7 @@ class WorkflowOut(WorkflowBase):
     stages: List[StageOut] = []
 
 
-class WorkflowRunCreate(BaseModel):
-    workflow_id: int
-    assigned_to: Optional[int] = None
-
-
-class WorkflowRunOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    workflow_id: int
-    started_by: int
-    assigned_to: Optional[int] = None
-    status: str
-    started_at: Optional[datetime]
-    completed_at: Optional[datetime]
-
-
-class TaskRunOut(BaseModel):
-    model_config = ConfigDict(from_attributes=True)
-
-    id: int
-    workflow_run_id: int
-    task_id: int
-    status: str
-    completed_at: Optional[datetime]
-    notes: Optional[str]
-
-
-class WorkflowRunTaskBoardOut(BaseModel):
+class WorkflowBoardTaskOut(BaseModel):
     id: int
     task_id: int
     title: str
@@ -138,29 +111,28 @@ class WorkflowRunTaskBoardOut(BaseModel):
     stage_id: int
     stage_title: str
     locked: bool
+    completed_at: Optional[datetime] = None
 
 
-class WorkflowRunStageBoardOut(BaseModel):
+class WorkflowBoardStageOut(BaseModel):
     id: int
     title: str
     position: int
     color: Optional[str] = None
     locked: bool
     completed: bool
-    tasks: List[WorkflowRunTaskBoardOut] = []
+    tasks: List[WorkflowBoardTaskOut] = []
 
 
-class WorkflowRunBoardOut(BaseModel):
+class WorkflowBoardOut(BaseModel):
     id: int
     workflow_id: int
     workflow_title: str
-    started_by: int
-    assigned_to: Optional[int] = None
     status: str
-    started_at: Optional[datetime]
+    created_at: Optional[datetime]
     completed_at: Optional[datetime]
     current_stage_position: Optional[int] = None
-    stages: List[WorkflowRunStageBoardOut] = []
+    stages: List[WorkflowBoardStageOut] = []
 
 
 class OrgUserCreate(BaseModel):

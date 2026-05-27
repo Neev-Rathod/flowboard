@@ -4,7 +4,6 @@ import { Sparkles, Terminal } from "lucide-react";
 
 import { ActiveRunsTable } from "../components/ActiveRunsTable";
 import DashboardSummary from "../components/DashboardSummary";
-import { MyTaskBoard } from "../components/MyTaskBoard";
 import { Badge } from "../components/ui/badge";
 import {
   Card,
@@ -18,9 +17,8 @@ export function DashboardPage() {
   const { apiBase, token, user } = useAuth();
   const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
-  const [runs, setRuns] = useState([]);
   const [workflows, setWorkflows] = useState([]);
-  const [runsLoading, setRunsLoading] = useState(true);
+  const [workflowsLoading, setWorkflowsLoading] = useState(true);
 
   // SEO & Head Metadata
   useEffect(() => {
@@ -35,13 +33,9 @@ export function DashboardPage() {
     }
     metaDesc.setAttribute(
       "content",
-      "Flowboard dashboard - manage staging workflows, view active team assignments, check reporting hierarchy status, and verify progress.",
+      "Flowboard dashboard - manage workflows, view active team assignments, and verify progress.",
     );
   }, []);
-
-  const triggerRefresh = () => {
-    setRefreshKey((prev) => prev + 1);
-  };
 
   const headers = useMemo(
     () => ({
@@ -52,27 +46,25 @@ export function DashboardPage() {
   );
 
   useEffect(() => {
-    const loadRuns = async () => {
+    const loadWorkflows = async () => {
       try {
-        const [runsResponse, workflowsResponse] = await Promise.all([
-          fetch(`${apiBase}/workflows/runs`, { headers }),
-          fetch(`${apiBase}/workflows/`, { headers }),
-        ]);
+        const workflowsResponse = await fetch(`${apiBase}/workflows/`, {
+          headers,
+        });
 
-        if (!runsResponse.ok || !workflowsResponse.ok) {
-          throw new Error("Failed to load active runs");
+        if (!workflowsResponse.ok) {
+          throw new Error("Failed to load active workflows");
         }
 
-        setRuns(await runsResponse.json());
         setWorkflows(await workflowsResponse.json());
       } catch (error) {
         console.error(error);
       } finally {
-        setRunsLoading(false);
+        setWorkflowsLoading(false);
       }
     };
 
-    loadRuns();
+    loadWorkflows();
   }, [apiBase, headers, refreshKey]);
 
   return (
@@ -114,24 +106,10 @@ export function DashboardPage() {
       </Card>
 
       <div
-        className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"
+        className="grid gap-6 xl:grid-cols-[1fr_1fr]"
         id="dashboard-grid-layout"
       >
         <section className="space-y-6" id="dashboard-work-section">
-          <Card
-            id="active-task-board-container"
-            className="border-zinc-200 bg-white shadow-sm"
-          >
-            <CardContent className="p-5">
-              <MyTaskBoard
-                key={`tasks-${refreshKey}`}
-                apiBase={apiBase}
-                token={token}
-                onTaskCompleted={triggerRefresh}
-              />
-            </CardContent>
-          </Card>
-
           <Card
             id="dashboard-analytics-card"
             className="border-zinc-200 bg-white shadow-sm"
@@ -154,10 +132,11 @@ export function DashboardPage() {
 
         <section id="dashboard-workflows-section">
           <ActiveRunsTable
-            runs={runs}
             workflows={workflows}
-            onOpenRun={(runId) => navigate(`/runs/${runId}`)}
-            loading={runsLoading}
+            onOpenWorkflow={(workflowId) =>
+              navigate(`/workflows/${workflowId}/board`)
+            }
+            loading={workflowsLoading}
           />
         </section>
       </div>

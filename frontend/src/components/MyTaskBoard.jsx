@@ -42,11 +42,11 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
     fetchInitialData();
   }, [apiBase, token]);
 
-  const handleComplete = async (runId, taskId, taskRunId) => {
-    setCompletingTaskId(taskRunId);
+  const handleComplete = async (workflowId, taskId) => {
+    setCompletingTaskId(taskId);
     try {
       const response = await fetch(
-        `${apiBase}/workflows/runs/${runId}/tasks/${taskId}/complete`,
+        `${apiBase}/workflows/${workflowId}/tasks/${taskId}/complete`,
         {
           method: "POST",
           headers,
@@ -56,9 +56,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
         const payload = await response.json();
         throw new Error(payload.detail || "Unable to complete task");
       }
-      // Reload local list
       await loadTasks();
-      // Notify parent to refresh dashboard metrics
       if (onTaskCompleted) {
         onTaskCompleted();
       }
@@ -122,7 +120,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
         <div className="grid gap-3">
           {tasks.map((task) => (
             <Card
-              key={task.task_run_id}
+              key={`${task.workflow_id}-${task.task_id}`}
               className="group border-zinc-200 bg-white shadow-sm transition-all duration-300 hover:border-zinc-300 hover:shadow-md"
             >
               <CardContent className="p-4 flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -164,16 +162,12 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                     size="sm"
                     variant="default"
                     className="h-9 rounded-xl px-4 font-semibold transition-all duration-200"
-                    disabled={completingTaskId === task.task_run_id}
+                    disabled={completingTaskId === task.task_id}
                     onClick={() =>
-                      handleComplete(
-                        task.run_id,
-                        task.task_id,
-                        task.task_run_id,
-                      )
+                      handleComplete(task.workflow_id, task.task_id)
                     }
                   >
-                    {completingTaskId === task.task_run_id ? (
+                    {completingTaskId === task.task_id ? (
                       <Loader2 className="h-4 w-4 animate-spin mr-1.5" />
                     ) : (
                       <CheckCircle2 className="mr-1.5 h-4 w-4" />

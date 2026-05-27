@@ -1,39 +1,30 @@
+from datetime import datetime
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from dependencies import get_db, get_current_user
-from models import Workflow, WorkflowStage, Task, WorkflowRun, TaskRun
-from models import User
+from models import Task, User, Workflow, WorkflowStage
+from routers.organization import is_descendant
 from schemas import (
-    WorkflowRunCreate,
-    WorkflowRunOut,
-    WorkflowRunBoardOut,
-    WorkflowCreate,
-    WorkflowOut,
     StageCreate,
     StageOut,
     TaskCreate,
     TaskOut,
+    WorkflowBoardOut,
+    WorkflowCreate,
+    WorkflowOut,
 )
-from routers.organization import is_descendant
 
 
-def build_run_board(db: Session, run: WorkflowRun) -> dict:
-    workflow = db.query(Workflow).filter(Workflow.id == run.workflow_id).first()
+def build_workflow_board(db: Session, workflow: Workflow) -> dict:
     stages = sorted(workflow.stages, key=lambda stage: stage.position or 0)
-    task_runs = (
-        db.query(TaskRun, Task, WorkflowStage)
-        .join(Task, TaskRun.task_id == Task.id)
-        .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
-        .filter(TaskRun.workflow_run_id == run.id)
-        .order_by(WorkflowStage.position.asc(), Task.id.asc())
-        .all()
-    )
 
     stage_completion: dict[int, bool] = {}
     for stage in stages:
-        stage_task_runs = [item for item in task_runs if item[2].id == stage.id]
-        stage_completion[stage.id] = bool(stage_task_runs) and all(task_run.status == "completed" for task_run, _, _ in stage_task_runs)
+        stage_completion[stage.id] = bool(stage.tasks) and all(
+            task.status == "completed" for task in stage.tasks
+        )
 
     active_stage_position = None
     for stage in stages:
@@ -42,9 +33,30 @@ def build_run_board(db: Session, run: WorkflowRun) -> dict:
             break
 
     board_stages = []
+    latest_completed_at = None
     for stage in stages:
         locked = active_stage_position is not None and stage.position > active_stage_position
-        stage_task_runs = [item for item in task_runs if item[2].id == stage.id]
+        stage_tasks = sorted(stage.tasks, key=lambda task: task.id)
+        tasks_payload = []
+        for task in stage_tasks:
+            tasks_payload.append(
+                {
+                    "id": task.id,
+                    "task_id": task.id,
+                    "title": task.title,
+                    "description": task.description,
+                    "priority": task.priority,
+                    "status": task.status,
+                    "assigned_to": task.assigned_to,
+                    "stage_id": stage.id,
+                    "stage_title": stage.title,
+                    "locked": locked,
+                    "completed_at": task.completed_at,
+                }
+            )
+            if task.completed_at and (latest_completed_at is None or task.completed_at > latest_completed_at):
+                latest_completed_at = task.completed_at
+
         board_stages.append(
             {
                 "id": stage.id,
@@ -53,33 +65,18 @@ def build_run_board(db: Session, run: WorkflowRun) -> dict:
                 "color": stage.color,
                 "locked": locked,
                 "completed": stage_completion.get(stage.id, False),
-                "tasks": [
-                    {
-                        "id": task_run.id,
-                        "task_id": task.id,
-                        "title": task.title,
-                        "description": task.description,
-                        "priority": task.priority,
-                        "status": task_run.status,
-                        "assigned_to": task.assigned_to,
-                        "stage_id": stage.id,
-                        "stage_title": stage.title,
-                        "locked": locked,
-                    }
-                    for task_run, task, _stage in stage_task_runs
-                ],
+                "tasks": tasks_payload,
             }
         )
 
+    status_label = "completed" if stages and all(stage_completion.values()) else "running"
     return {
-        "id": run.id,
+        "id": workflow.id,
         "workflow_id": workflow.id,
         "workflow_title": workflow.title,
-        "started_by": run.started_by,
-        "assigned_to": run.assigned_to,
-        "status": run.status,
-        "started_at": run.started_at,
-        "completed_at": run.completed_at,
+        "status": status_label,
+        "created_at": workflow.created_at,
+        "completed_at": latest_completed_at if status_label == "completed" else None,
         "current_stage_position": active_stage_position,
         "stages": board_stages,
     }
@@ -96,7 +93,7 @@ def create_workflow(payload: WorkflowCreate, db: Session = Depends(get_db), curr
         company_id=current_user.company_id,
         created_by=current_user.id if current_user is not None else 0,
         is_template=payload.is_template,
-        visibility=payload.visibility,
+        visibility=payload.visibility or "public",
     )
     db.add(wf)
     db.commit()
@@ -106,33 +103,33 @@ def create_workflow(payload: WorkflowCreate, db: Session = Depends(get_db), curr
 
 @router.get("/", response_model=list[WorkflowOut])
 def list_workflows(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    results = db.query(Workflow).filter(Workflow.created_by == (current_user.id if current_user else 0)).all()
+    results = (
+        db.query(Workflow)
+        .filter(Workflow.company_id == (current_user.company_id if current_user else None))
+        .order_by(Workflow.created_at.desc())
+        .all()
+    )
     return results
-
-
-@router.get("/runs", response_model=list[dict])
-def list_runs(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    runs = db.query(WorkflowRun).filter(WorkflowRun.started_by == (current_user.id if current_user else 0)).all()
-    return [
-        {"id": r.id, "workflow_id": r.workflow_id, "status": r.status, "started_at": r.started_at, "completed_at": r.completed_at}
-        for r in runs
-    ]
 
 
 @router.get("/tasks/assigned", response_model=list[dict])
 def get_assigned_tasks(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    runs = db.query(WorkflowRun).filter(WorkflowRun.status == "running").all()
     assigned_tasks = []
-    for run in runs:
-        board = build_run_board(db, run)
+    workflows = (
+        db.query(Workflow)
+        .filter(Workflow.company_id == current_user.company_id)
+        .order_by(Workflow.created_at.desc())
+        .all()
+    )
+    for workflow in workflows:
+        board = build_workflow_board(db, workflow)
         for stage in board["stages"]:
             if not stage["locked"]:
                 for task in stage["tasks"]:
                     if task["assigned_to"] == current_user.id and task["status"] == "todo":
                         assigned_tasks.append({
-                            "task_run_id": task["id"],
                             "task_id": task["task_id"],
-                            "run_id": run.id,
+                            "workflow_id": board["workflow_id"],
                             "workflow_title": board["workflow_title"],
                             "stage_title": stage["title"],
                             "title": task["title"],
@@ -145,7 +142,11 @@ def get_assigned_tasks(db: Session = Depends(get_db), current_user: User = Depen
 
 @router.get("/{workflow_id}", response_model=WorkflowOut)
 def get_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     return wf
@@ -153,14 +154,18 @@ def get_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: 
 
 @router.put("/{workflow_id}", response_model=WorkflowOut)
 def update_workflow(workflow_id: int, payload: WorkflowCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     wf.title = payload.title
     wf.description = payload.description
     wf.category = payload.category
     wf.is_template = payload.is_template
-    wf.visibility = payload.visibility
+    wf.visibility = payload.visibility or "public"
     db.add(wf)
     db.commit()
     db.refresh(wf)
@@ -169,7 +174,11 @@ def update_workflow(workflow_id: int, payload: WorkflowCreate, db: Session = Dep
 
 @router.delete("/{workflow_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     db.delete(wf)
@@ -179,7 +188,11 @@ def delete_workflow(workflow_id: int, db: Session = Depends(get_db), current_use
 
 @router.post("/{workflow_id}/duplicate", response_model=WorkflowOut)
 def duplicate_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     new_wf = Workflow(
@@ -189,7 +202,7 @@ def duplicate_workflow(workflow_id: int, db: Session = Depends(get_db), current_
         company_id=wf.company_id,
         created_by=current_user.id if current_user else 0,
         is_template=wf.is_template,
-        visibility=wf.visibility,
+        visibility="public",
     )
     db.add(new_wf)
     db.commit()
@@ -226,7 +239,11 @@ def duplicate_workflow(workflow_id: int, db: Session = Depends(get_db), current_
 
 @router.get("/{workflow_id}/export", response_model=dict)
 def export_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     data = {
@@ -256,7 +273,7 @@ def import_workflow(payload: dict, db: Session = Depends(get_db), current_user: 
         company_id=current_user.company_id,
         created_by=(current_user.id if current_user else 0),
         is_template=payload.get("is_template", False),
-        visibility=payload.get("visibility", "private"),
+        visibility="public",
     )
     db.add(wf)
     db.commit()
@@ -302,7 +319,11 @@ def reorder_stages(payload: dict, db: Session = Depends(get_db), current_user: U
 
 @router.post("/{workflow_id}/stages", response_model=StageOut, status_code=status.HTTP_201_CREATED)
 def create_stage(workflow_id: int, payload: StageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
+    wf = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
     stage = WorkflowStage(
@@ -320,7 +341,12 @@ def create_stage(workflow_id: int, payload: StageCreate, db: Session = Depends(g
 
 @router.post("/stages/{stage_id}/tasks", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def create_task(stage_id: int, payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    stage = db.query(WorkflowStage).filter(WorkflowStage.id == stage_id).first()
+    stage = (
+        db.query(WorkflowStage)
+        .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
+        .filter(WorkflowStage.id == stage_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if stage is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stage not found")
     task = Task(
@@ -340,7 +366,12 @@ def create_task(stage_id: int, payload: TaskCreate, db: Session = Depends(get_db
 
 @router.put("/stages/{stage_id}", response_model=StageOut)
 def update_stage(stage_id: int, payload: StageCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    stage = db.query(WorkflowStage).filter(WorkflowStage.id == stage_id).first()
+    stage = (
+        db.query(WorkflowStage)
+        .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
+        .filter(WorkflowStage.id == stage_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if stage is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stage not found")
     stage.title = payload.title
@@ -355,7 +386,12 @@ def update_stage(stage_id: int, payload: StageCreate, db: Session = Depends(get_
 
 @router.delete("/stages/{stage_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_stage(stage_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    stage = db.query(WorkflowStage).filter(WorkflowStage.id == stage_id).first()
+    stage = (
+        db.query(WorkflowStage)
+        .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
+        .filter(WorkflowStage.id == stage_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if stage is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Stage not found")
     db.delete(stage)
@@ -365,7 +401,13 @@ def delete_stage(stage_id: int, db: Session = Depends(get_db), current_user: Use
 
 @router.put("/tasks/{task_id}", response_model=TaskOut)
 def update_task(task_id: int, payload: TaskCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = (
+        db.query(Task)
+        .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
+        .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
+        .filter(Task.id == task_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     task.title = payload.title
@@ -382,7 +424,13 @@ def update_task(task_id: int, payload: TaskCreate, db: Session = Depends(get_db)
 
 @router.delete("/tasks/{task_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_task(task_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    task = db.query(Task).filter(Task.id == task_id).first()
+    task = (
+        db.query(Task)
+        .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
+        .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
+        .filter(Task.id == task_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
     if task is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
     db.delete(task)
@@ -390,64 +438,40 @@ def delete_task(task_id: int, db: Session = Depends(get_db), current_user: User 
     return None
 
 
-@router.post("/{workflow_id}/runs", response_model=WorkflowRunOut, status_code=status.HTTP_201_CREATED)
-def start_workflow_run(
-    workflow_id: int,
-    payload: WorkflowRunCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
-):
-    wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
-    if wf is None:
+@router.get("/{workflow_id}/board", response_model=WorkflowBoardOut)
+def get_workflow_board(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    workflow = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
+    if workflow is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
+    return build_workflow_board(db, workflow)
+
+
+@router.post("/{workflow_id}/tasks/{task_id}/complete", response_model=dict)
+def complete_task(workflow_id: int, task_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    workflow = (
+        db.query(Workflow)
+        .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
+        .first()
+    )
+    if workflow is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
 
-    if payload.assigned_to is not None:
-        assignee = db.query(User).filter(User.id == payload.assigned_to).first()
-        if assignee is None:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee not found")
-        if current_user.role != "admin" and not is_descendant(db, current_user.id, assignee.id):
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Assignee must be below your hierarchy")
-
-    run = WorkflowRun(
-        workflow_id=workflow_id,
-        started_by=current_user.id if current_user else 0,
-        assigned_to=payload.assigned_to,
+    task = (
+        db.query(Task)
+        .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
+        .filter(Task.id == task_id, WorkflowStage.workflow_id == workflow.id)
+        .first()
     )
-    db.add(run)
-    db.commit()
-    db.refresh(run)
+    if task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task not found")
 
-    # create task runs for all tasks in the workflow
-    for stage in wf.stages:
-        for task in stage.tasks:
-            tr = TaskRun(workflow_run_id=run.id, task_id=task.id, status=task.status)
-            db.add(tr)
-    db.commit()
-
-    return run
-
-
-@router.get("/runs/{run_id}", response_model=WorkflowRunBoardOut)
-def get_workflow_run_board(run_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    run = db.query(WorkflowRun).filter(WorkflowRun.id == run_id).first()
-    if run is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow run not found")
-    return build_run_board(db, run)
-
-
-@router.post("/runs/{run_id}/tasks/{task_id}/complete", response_model=dict)
-def complete_task_run(run_id: int, task_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    tr = db.query(TaskRun).filter(TaskRun.workflow_run_id == run_id, TaskRun.task_id == task_id).first()
-    if tr is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task run not found")
-
-    run = db.query(WorkflowRun).filter(WorkflowRun.id == run_id).first()
-    if run is None:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow run not found")
-
-    board = build_run_board(db, run)
+    board = build_workflow_board(db, workflow)
     stage_for_task = next(
-        (stage for stage in board["stages"] if any(task["task_id"] == task_id for task in stage["tasks"])),
+        (stage for stage in board["stages"] if any(item["task_id"] == task_id for item in stage["tasks"])),
         None,
     )
     if stage_for_task is None:
@@ -455,41 +479,30 @@ def complete_task_run(run_id: int, task_id: int, db: Session = Depends(get_db), 
     if stage_for_task["locked"]:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This stage is locked until earlier stages are completed")
 
-    tr.status = "completed"
-    from datetime import datetime
-
-    tr.completed_at = datetime.utcnow()
-    db.add(tr)
+    task.status = "completed"
+    task.completed_at = datetime.utcnow()
+    db.add(task)
     db.commit()
-    db.refresh(tr)
+    db.refresh(task)
 
-    updated_board = build_run_board(db, run)
-    if all(stage["completed"] for stage in updated_board["stages"]):
-        run.status = "completed"
-        run.completed_at = datetime.utcnow()
-        db.add(run)
-        db.commit()
-
-    return {"id": tr.id, "status": tr.status, "completed_at": tr.completed_at}
+    return {"id": task.id, "status": task.status, "completed_at": task.completed_at}
 
 
 @router.get("/dashboard/summary", response_model=dict)
 def dashboard_summary(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    user_id = current_user.id if current_user else 0
-    workflows = db.query(Workflow).filter(Workflow.created_by == user_id).all()
-    runs = db.query(WorkflowRun).filter(WorkflowRun.started_by == user_id).all()
+    company_id = current_user.company_id if current_user else None
+    workflows = db.query(Workflow).filter(Workflow.company_id == company_id).all()
     tasks = (
         db.query(Task)
         .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
         .join(Workflow, WorkflowStage.workflow_id == Workflow.id)
-        .filter(Workflow.created_by == user_id)
+        .filter(Workflow.company_id == company_id)
         .all()
     )
     completed_tasks = [task for task in tasks if task.status == "completed"]
     overdue_tasks = [task for task in tasks if task.due_date is not None and task.status != "completed"]
     return {
         "workflow_count": len(workflows),
-        "run_count": len(runs),
         "task_count": len(tasks),
         "completed_task_count": len(completed_tasks),
         "overdue_task_count": len(overdue_tasks),

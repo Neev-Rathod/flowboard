@@ -45,7 +45,7 @@ class Workflow(Base):
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     is_template = Column(Boolean, default=False)
-    visibility = Column(String(50), default="private")
+    visibility = Column(String(50), default="public")
 
     company = relationship("Company", back_populates="workflows")
     stages = relationship("WorkflowStage", back_populates="workflow", cascade="all, delete-orphan")
@@ -77,28 +77,6 @@ class Task(Base):
     due_date = Column(DateTime)
     assigned_to = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    completed_at = Column(DateTime)
 
     stage = relationship("WorkflowStage", back_populates="tasks")
-
-
-class WorkflowRun(Base):
-    __tablename__ = "workflow_runs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    workflow_id = Column(Integer, ForeignKey("workflows.id"), nullable=False)
-    started_by = Column(Integer, ForeignKey("users.id"), nullable=False)
-    assigned_to = Column(Integer, ForeignKey("users.id"), nullable=True)
-    status = Column(String(50), default="running")
-    started_at = Column(DateTime(timezone=True), server_default=func.now())
-    completed_at = Column(DateTime)
-
-
-class TaskRun(Base):
-    __tablename__ = "task_runs"
-
-    id = Column(Integer, primary_key=True, index=True)
-    workflow_run_id = Column(Integer, ForeignKey("workflow_runs.id"), nullable=False)
-    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False)
-    status = Column(String(50), default="todo")
-    completed_at = Column(DateTime)
-    notes = Column(Text)

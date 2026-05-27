@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { GripVertical, Plus, Play, RefreshCw, Trash2 } from "lucide-react";
+import { GripVertical, Plus, RefreshCw, Trash2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
 import { Button } from "./ui/button";
@@ -16,12 +16,10 @@ function reorder(array, fromIndex, toIndex) {
 
 export default function WorkflowList({ apiBase, token }) {
   const [workflows, setWorkflows] = useState([]);
-  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [title, setTitle] = useState("");
   const [stageTitle, setStageTitle] = useState("");
-  const [assigneeByWorkflow, setAssigneeByWorkflow] = useState({});
   const navigate = useNavigate();
 
   const headers = useMemo(
@@ -34,18 +32,14 @@ export default function WorkflowList({ apiBase, token }) {
 
   const loadWorkflows = async () => {
     try {
-      const [workflowsResponse, usersResponse] = await Promise.all([
-        fetch(`${apiBase}/workflows/`, { headers }),
-        fetch(`${apiBase}/organization/users`, { headers }),
-      ]);
+      const workflowsResponse = await fetch(`${apiBase}/workflows/`, {
+        headers,
+      });
 
       if (!workflowsResponse.ok) throw new Error("Failed to load workflows");
-      if (!usersResponse.ok) throw new Error("Failed to load users");
 
       const workflowsPayload = await workflowsResponse.json();
-      const usersPayload = await usersResponse.json();
       setWorkflows(Array.isArray(workflowsPayload) ? workflowsPayload : []);
-      setUsers(Array.isArray(usersPayload) ? usersPayload : []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -73,6 +67,7 @@ export default function WorkflowList({ apiBase, token }) {
       const wf = await res.json();
       setWorkflows((current) => [wf, ...current]);
       setTitle("");
+      navigate(`/workflows/${wf.id}/board`);
     } catch (error) {
       console.error(error);
     }
@@ -164,34 +159,6 @@ export default function WorkflowList({ apiBase, token }) {
     await reorderStages(workflowId, nextStages);
   };
 
-  const startRun = async (workflowId) => {
-    try {
-      const response = await fetch(`${apiBase}/workflows/${workflowId}/runs`, {
-        method: "POST",
-        headers,
-        body: JSON.stringify({
-          workflow_id: workflowId,
-          assigned_to: assigneeByWorkflow[workflowId]
-            ? Number(assigneeByWorkflow[workflowId])
-            : null,
-        }),
-      });
-      if (!response.ok) throw new Error("Unable to start run");
-      const payload = await response.json();
-      await loadWorkflows();
-      navigate(`/runs/${payload.id}`);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
-  const startRunForAssignee = (workflowId, assignedTo) => {
-    setAssigneeByWorkflow((current) => ({
-      ...current,
-      [workflowId]: assignedTo,
-    }));
-  };
-
   if (loading) {
     return <div className="text-sm text-slate-300">Loading workflows...</div>;
   }
@@ -233,7 +200,6 @@ export default function WorkflowList({ apiBase, token }) {
                       <CardTitle className="text-base">
                         {workflow.title}
                       </CardTitle>
-                      <Badge variant="outline">{workflow.visibility}</Badge>
                       {workflow.is_template ? (
                         <Badge variant="secondary">template</Badge>
                       ) : null}
@@ -255,6 +221,16 @@ export default function WorkflowList({ apiBase, token }) {
                     >
                       <RefreshCw className="h-4 w-4" />
                       {expandedId === workflow.id ? "Hide" : "Manage"}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() =>
+                        navigate(`/workflows/${workflow.id}/board`)
+                      }
+                    >
+                      Open board
                     </Button>
                     <Button
                       type="button"
@@ -335,28 +311,18 @@ export default function WorkflowList({ apiBase, token }) {
                       )}
                     </div>
 
-                    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center">
-                      <select
-                        value={assigneeByWorkflow[workflow.id] || ""}
-                        onChange={(event) =>
-                          startRunForAssignee(workflow.id, event.target.value)
-                        }
-                        className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-sm text-white outline-none lg:max-w-xs"
-                      >
-                        <option value="">Assign run to...</option>
-                        {users.map((candidate) => (
-                          <option key={candidate.id} value={candidate.id}>
-                            {candidate.username} - {candidate.job_title}
-                          </option>
-                        ))}
-                      </select>
+                    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center lg:justify-between">
+                      <div className="text-sm text-slate-400">
+                        This workflow is active as soon as it is created.
+                      </div>
                       <Button
                         type="button"
-                        onClick={() => startRun(workflow.id)}
+                        onClick={() =>
+                          navigate(`/workflows/${workflow.id}/board`)
+                        }
                         className="lg:w-auto"
                       >
-                        <Play className="h-4 w-4" />
-                        Start run
+                        Open board
                       </Button>
                     </div>
                   </CardContent>

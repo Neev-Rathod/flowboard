@@ -40,9 +40,9 @@ def ensure_sqlite_columns() -> None:
         if "company_id" not in workflow_columns:
             connection.execute(text("ALTER TABLE workflows ADD COLUMN company_id INTEGER"))
 
-        run_columns = {column["name"] for column in inspector.get_columns("workflow_runs")}
-        if "assigned_to" not in run_columns:
-            connection.execute(text("ALTER TABLE workflow_runs ADD COLUMN assigned_to INTEGER"))
+        task_columns = {column["name"] for column in inspector.get_columns("tasks")}
+        if "completed_at" not in task_columns:
+            connection.execute(text("ALTER TABLE tasks ADD COLUMN completed_at DATETIME"))
 
 
 ensure_sqlite_columns()
