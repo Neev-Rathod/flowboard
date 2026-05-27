@@ -1,4 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
+import WorkflowList from "./components/WorkflowList";
+import DashboardSummary from "./components/DashboardSummary";
 
 const runtimeConfig = window.__FLOWBOARD_CONFIG__ || {};
 
@@ -29,7 +31,6 @@ function App() {
 
   useEffect(() => {
     if (!token) {
-      setLoading(false);
       return;
     }
 
@@ -148,8 +149,8 @@ function App() {
   if (user) {
     return (
       <main className="min-h-screen px-6 py-10 text-slate-100 md:px-10">
-        <section className="mx-auto flex min-h-[calc(100vh-5rem)] w-full max-w-5xl items-center justify-center">
-          <div className="grid w-full gap-6 rounded-[2rem] border border-white/10 bg-white/8 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-2xl md:grid-cols-[1.2fr_0.8fr] md:p-10">
+        <section className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl gap-8 md:grid-cols-[1.05fr_0.95fr]">
+          <div className="grid gap-6 rounded-4xl border border-white/10 bg-white/8 p-6 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-2xl md:p-10">
             <div className="space-y-6">
               <span className="inline-flex rounded-full border border-emerald-400/20 bg-emerald-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-emerald-200">
                 Authenticated
@@ -183,24 +184,74 @@ function App() {
                   </p>
                 </div>
               </div>
+
+              <div className="grid gap-4 sm:grid-cols-3">
+                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    Frontend
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-white">
+                    React + Vite + Tailwind
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    Backend
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-white">
+                    FastAPI + JWT + SQLAlchemy
+                  </p>
+                </div>
+                <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
+                  <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
+                    Database
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-white">
+                    SQLite local, PostgreSQL deploy
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-6">
+            <div className="rounded-4xl border border-white/10 bg-white/8 p-4 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:p-6">
+              <div className="rounded-3xl border border-white/10 bg-slate-950/45 p-6 sm:p-8">
+                <div className="flex items-center justify-between gap-4">
+                  <div>
+                    <h2 className="text-2xl font-semibold text-white">
+                      Dashboard
+                    </h2>
+                    <p className="mt-1 text-sm text-slate-400">
+                      Track workflow volume, completion, and overdue work.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="mt-6">
+                  <DashboardSummary apiBase={API_BASE} token={token} />
+                </div>
+
+                <div className="mt-6">
+                  <WorkflowList apiBase={API_BASE} token={token} />
+                </div>
+              </div>
             </div>
 
-            <div className="flex flex-col justify-between rounded-[1.75rem] border border-sky-400/15 bg-slate-950/50 p-6">
-              <div>
-                <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-200/80">
-                  Session Status
-                </p>
-                <div className="mt-3 space-y-3 text-sm text-slate-300">
-                  <p>Backend: {API_BASE}</p>
-                  <p>Token: active</p>
-                  <p>Database: SQLite locally, PostgreSQL in deployment.</p>
-                </div>
+            <div className="rounded-[1.75rem] border border-sky-400/15 bg-slate-950/50 p-6">
+              <p className="text-sm font-medium uppercase tracking-[0.2em] text-sky-200/80">
+                Session
+              </p>
+              <div className="mt-3 space-y-3 text-sm text-slate-300">
+                <p>Backend: {API_BASE}</p>
+                <p>Token: active</p>
+                <p>Database: SQLite locally, PostgreSQL in deployment.</p>
               </div>
 
               <button
                 type="button"
                 onClick={logout}
-                className="mt-8 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-100"
+                className="mt-6 inline-flex items-center justify-center rounded-2xl bg-white px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-100"
               >
                 Log out
               </button>
@@ -213,52 +264,51 @@ function App() {
 
   return (
     <main className="min-h-screen px-6 py-10 text-slate-100 md:px-10">
-      <section className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-8 md:grid-cols-[1fr_0.95fr]">
+      <section className="mx-auto grid min-h-[calc(100vh-5rem)] w-full max-w-6xl items-center gap-8 md:grid-cols-[1.05fr_0.95fr]">
         <div className="space-y-6">
           <span className="inline-flex rounded-full border border-sky-400/20 bg-sky-400/10 px-3 py-1 text-xs font-semibold uppercase tracking-[0.28em] text-sky-100">
-            Flowboard Auth
+            Flowboard
           </span>
           <div className="space-y-4">
             <h1 className="max-w-2xl text-5xl font-semibold tracking-tight text-white md:text-7xl">
-              A clean login starter for React and FastAPI.
+              Workflow orchestration for real processes.
             </h1>
             <p className="max-w-xl text-base leading-7 text-slate-300 md:text-lg">
-              Tailwind powers the UI, FastAPI handles registration and JWT
-              login, and SQLite keeps local development simple while PostgreSQL
-              is ready for deployment.
+              Build reusable workflows with stages, tasks, runs, and dashboard
+              analytics.
             </p>
           </div>
 
           <div className="grid gap-4 sm:grid-cols-3">
             <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                Frontend
+                Workflow
               </p>
               <p className="mt-2 text-sm font-medium text-white">
-                React + Vite + Tailwind
+                Templates and runs
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                Backend
+                Stages
               </p>
               <p className="mt-2 text-sm font-medium text-white">
-                FastAPI + JWT + SQLAlchemy
+                Ordered process steps
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/8 p-4 backdrop-blur-xl">
               <p className="text-xs uppercase tracking-[0.2em] text-slate-400">
-                Database
+                Runs
               </p>
               <p className="mt-2 text-sm font-medium text-white">
-                SQLite local, PostgreSQL deploy
+                Track execution progress
               </p>
             </div>
           </div>
         </div>
 
-        <div className="rounded-[2rem] border border-white/10 bg-white/8 p-4 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:p-6">
-          <div className="rounded-[1.5rem] border border-white/10 bg-slate-950/45 p-6 sm:p-8">
+        <div className="rounded-4xl border border-white/10 bg-white/8 p-4 shadow-[0_30px_120px_rgba(15,23,42,0.55)] backdrop-blur-2xl sm:p-6">
+          <div className="rounded-3xl border border-white/10 bg-slate-950/45 p-6 sm:p-8">
             <div className="flex items-center justify-between gap-4">
               <div>
                 <h2 className="text-2xl font-semibold text-white">
@@ -305,7 +355,7 @@ function App() {
                   onChange={handleChange}
                   autoComplete="username"
                   required
-                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none ring-0 transition placeholder:text-slate-500 focus:border-sky-400/50 focus:outline-none"
+                  className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-white outline-none transition placeholder:text-slate-500 focus:border-sky-400/50"
                   placeholder="jane.doe"
                 />
               </label>
@@ -371,12 +421,6 @@ function App() {
                     : "Sign in"}
               </button>
             </form>
-
-            <p className="mt-6 text-center text-xs leading-5 text-slate-400">
-              API endpoint: {API_BASE}. If you deploy somewhere else, set{" "}
-              <span className="font-medium text-slate-200">VITE_API_URL</span>{" "}
-              to match the backend URL.
-            </p>
           </div>
         </div>
       </section>

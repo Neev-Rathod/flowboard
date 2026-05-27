@@ -1,13 +1,13 @@
 # Flowboard
 
-This is the baseline structure for the app containing a React Vite frontend, FastAPI backend, and multi-container Docker configuration.
+This is a workflow builder platform with a React Vite frontend, FastAPI backend, and multi-container Docker configuration.
 
-The app now includes a basic login system with JWT authentication. The backend stores users in SQLite for local development and PostgreSQL when `DATABASE_URL` is provided.
+The app includes JWT authentication plus a workflow system with templates, stages, tasks, workflow runs, stage ordering, import/export, and a dashboard summary.
 
 ## Folder Structure
 
 - `frontend/`: React app scaffolded with Vite.
-- `backend/`: FastAPI app with register/login endpoints, connected to SQLite locally or PostgreSQL in production.
+- `backend/`: FastAPI app with auth, workflow CRUD, stage/task management, workflow runs, and dashboard endpoints.
 
 ## Local Development (Without Docker)
 
@@ -27,6 +27,25 @@ _(By default, this will create a `local.db` sqlite database)_
 3. Start the dev server: `npm run dev`
 
 If you deploy the frontend somewhere other than `localhost`, set `VITE_API_URL` to the backend URL.
+
+## Workflow Features
+
+- Create, edit, duplicate, archive, and delete workflows.
+- Add stages and reorder them with drag and drop.
+- Create tasks under stages.
+- Start workflow runs and complete task runs.
+- Save workflows as templates, export them as JSON, and import them back.
+- View dashboard summary metrics for workflows, runs, tasks, and completion percentage.
+
+## Backend API Surface
+
+- `POST /auth/register`, `POST /auth/login`, `GET /auth/me`
+- `GET /workflows`, `POST /workflows`, `GET /workflows/{id}`
+- `PUT /workflows/{id}`, `DELETE /workflows/{id}`, `POST /workflows/{id}/duplicate`
+- `POST /workflows/{id}/stages`, `PUT /workflows/stages/reorder`
+- `POST /workflows/stages/{stage_id}/tasks`
+- `POST /workflows/{id}/runs`, `POST /workflows/runs/{run_id}/tasks/{task_id}/complete`
+- `GET /workflows/dashboard/summary`, `GET /workflows/{id}/export`, `POST /workflows/import`
 
 ## Deployment (With Docker)
 

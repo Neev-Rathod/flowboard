@@ -2,15 +2,17 @@ import os
 
 from fastapi import Depends, FastAPI, HTTPException, status
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
-from jose import JWTError, jwt
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
-from database import Base, SessionLocal, engine
+from database import Base, engine
+from dependencies import get_db, get_current_user
 from models import User
 from schemas import AuthResponse, UserCreate, UserLogin, UserOut
-from security import ALGORITHM, SECRET_KEY, create_access_token, get_password_hash, verify_password
+from security import create_access_token, get_password_hash, verify_password
+
+# import routers
+from routers.workflows import router as workflows_router
 
 # Create database tables
 Base.metadata.create_all(bind=engine)
@@ -35,16 +37,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-bearer_scheme = HTTPBearer(auto_error=False)
-
-
-def get_db():
-    db = SessionLocal()
-    try:
-        yield db
-    finally:
-        db.close()
-
 
 def build_auth_response(user: User, token: str) -> AuthResponse:
     return AuthResponse(
@@ -53,39 +45,9 @@ def build_auth_response(user: User, token: str) -> AuthResponse:
     )
 
 
-def get_current_user(
-    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
-    db: Session = Depends(get_db),
-) -> User:
-    if credentials is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Missing authentication token",
-        )
+# include routers
+app.include_router(workflows_router)
 
-    try:
-        payload = jwt.decode(credentials.credentials, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")
-    except JWTError as exc:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        ) from exc
-
-    if user_id is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid or expired token",
-        )
-
-    user = db.query(User).filter(User.id == int(user_id)).first()
-    if user is None:
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="User not found",
-        )
-
-    return user
 
 @app.get("/")
 def read_root():
