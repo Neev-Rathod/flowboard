@@ -2,17 +2,18 @@ import { cn } from "../../lib/utils";
 
 export function Badge({ className, variant = "default", ...props }) {
   const variants = {
-    default: "bg-sky-400/15 text-sky-100 border-sky-400/20",
-    secondary: "bg-white/10 text-white border-white/10",
-    success: "bg-emerald-400/15 text-emerald-100 border-emerald-400/20",
-    outline: "bg-transparent text-slate-200 border-white/15",
-    destructive: "bg-rose-400/15 text-rose-100 border-rose-400/20",
+    default: "bg-zinc-900 text-zinc-50 border-transparent",
+    secondary: "bg-zinc-100 text-zinc-900 border-transparent",
+    success: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    outline: "bg-transparent text-zinc-700 border-zinc-200",
+    destructive: "bg-red-50 text-red-700 border-red-200",
+    warning: "bg-amber-50 text-amber-700 border-amber-200",
   };
 
   return (
     <span
       className={cn(
-        "inline-flex items-center rounded-full border px-2.5 py-1 text-xs font-medium",
+        "inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-medium transition-colors",
         variants[variant] || variants.default,
         className,
       )}

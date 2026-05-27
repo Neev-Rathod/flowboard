@@ -1,5 +1,10 @@
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { Sparkles, Terminal } from "lucide-react";
+
+import { ActiveRunsTable } from "../components/ActiveRunsTable";
 import DashboardSummary from "../components/DashboardSummary";
-import WorkflowList from "../components/WorkflowList";
+import { MyTaskBoard } from "../components/MyTaskBoard";
 import { Badge } from "../components/ui/badge";
 import {
   Card,
@@ -11,45 +16,151 @@ import { useAuth } from "../context/AuthContext";
 
 export function DashboardPage() {
   const { apiBase, token, user } = useAuth();
+  const navigate = useNavigate();
+  const [refreshKey, setRefreshKey] = useState(0);
+  const [runs, setRuns] = useState([]);
+  const [workflows, setWorkflows] = useState([]);
+  const [runsLoading, setRunsLoading] = useState(true);
+
+  // SEO & Head Metadata
+  useEffect(() => {
+    document.title = "Dashboard | Flowboard Org Orchestrator";
+
+    // Manage meta description
+    let metaDesc = document.querySelector('meta[name="description"]');
+    if (!metaDesc) {
+      metaDesc = document.createElement("meta");
+      metaDesc.setAttribute("name", "description");
+      document.head.appendChild(metaDesc);
+    }
+    metaDesc.setAttribute(
+      "content",
+      "Flowboard dashboard - manage staging workflows, view active team assignments, check reporting hierarchy status, and verify progress.",
+    );
+  }, []);
+
+  const triggerRefresh = () => {
+    setRefreshKey((prev) => prev + 1);
+  };
+
+  const headers = useMemo(
+    () => ({
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json",
+    }),
+    [token],
+  );
+
+  useEffect(() => {
+    const loadRuns = async () => {
+      try {
+        const [runsResponse, workflowsResponse] = await Promise.all([
+          fetch(`${apiBase}/workflows/runs`, { headers }),
+          fetch(`${apiBase}/workflows/`, { headers }),
+        ]);
+
+        if (!runsResponse.ok || !workflowsResponse.ok) {
+          throw new Error("Failed to load active runs");
+        }
+
+        setRuns(await runsResponse.json());
+        setWorkflows(await workflowsResponse.json());
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setRunsLoading(false);
+      }
+    };
+
+    loadRuns();
+  }, [apiBase, headers, refreshKey]);
 
   return (
-    <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-      <div className="space-y-6">
-        <Card className="border-white/10 bg-slate-950/55">
-          <CardHeader>
-            <Badge className="w-fit bg-emerald-400/15 text-emerald-100 border-emerald-400/20">
+    <main className="space-y-6 animate-fade-in" id="dashboard-main-container">
+      <Card
+        id="welcome-card-banner"
+        className="border-zinc-200 bg-white shadow-sm"
+      >
+        <CardHeader>
+          <div className="flex items-center gap-2">
+            <Badge
+              id="user-role-badge"
+              variant="secondary"
+              className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-700"
+            >
               {user?.role || "employee"}
             </Badge>
-            <CardTitle className="mt-2 text-3xl text-white">
-              Good to see you, {user?.username}.
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm leading-6 text-slate-300">
-            Manage hierarchy-driven workflows, hand off runs to direct reports,
-            and keep HR and engineering work visible in one place.
-          </CardContent>
-        </Card>
-
-        <Card className="border-white/10 bg-slate-950/55">
-          <CardHeader>
-            <CardTitle className="text-xl text-white">
-              Dashboard analytics
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <DashboardSummary apiBase={apiBase} token={token} />
-          </CardContent>
-        </Card>
-      </div>
-
-      <Card className="border-white/10 bg-slate-950/55">
-        <CardHeader>
-          <CardTitle className="text-xl text-white">Recent workflows</CardTitle>
+            <Badge
+              id="user-job-title-badge"
+              variant="outline"
+              className="rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-700"
+            >
+              {user?.job_title || "Employee"}
+            </Badge>
+          </div>
+          <CardTitle
+            id="welcome-title-heading"
+            className="mt-3 flex items-center gap-2 text-3xl font-semibold tracking-tight text-zinc-950 md:text-4xl"
+          >
+            <span>Welcome back, {user?.username}</span>
+            <Sparkles className="h-6 w-6 text-zinc-500" />
+          </CardTitle>
         </CardHeader>
-        <CardContent>
-          <WorkflowList apiBase={apiBase} token={token} />
+        <CardContent className="max-w-2xl text-sm leading-relaxed text-zinc-600">
+          Track live assignments, monitor completion analytics, and jump
+          straight into the active run boards without the workflow builder
+          crowding your dashboard.
         </CardContent>
       </Card>
-    </div>
+
+      <div
+        className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]"
+        id="dashboard-grid-layout"
+      >
+        <section className="space-y-6" id="dashboard-work-section">
+          <Card
+            id="active-task-board-container"
+            className="border-zinc-200 bg-white shadow-sm"
+          >
+            <CardContent className="p-5">
+              <MyTaskBoard
+                key={`tasks-${refreshKey}`}
+                apiBase={apiBase}
+                token={token}
+                onTaskCompleted={triggerRefresh}
+              />
+            </CardContent>
+          </Card>
+
+          <Card
+            id="dashboard-analytics-card"
+            className="border-zinc-200 bg-white shadow-sm"
+          >
+            <CardHeader className="border-b border-zinc-200 pb-3">
+              <CardTitle className="flex items-center gap-2 text-lg font-semibold text-zinc-950">
+                <Terminal className="h-5 w-5 text-zinc-500" />
+                Dashboard metrics
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <DashboardSummary
+                key={`summary-${refreshKey}`}
+                apiBase={apiBase}
+                token={token}
+              />
+            </CardContent>
+          </Card>
+        </section>
+
+        <section id="dashboard-workflows-section">
+          <ActiveRunsTable
+            runs={runs}
+            workflows={workflows}
+            onOpenRun={(runId) => navigate(`/runs/${runId}`)}
+            loading={runsLoading}
+          />
+        </section>
+      </div>
+    </main>
   );
 }

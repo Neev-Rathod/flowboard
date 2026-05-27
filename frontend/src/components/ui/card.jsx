@@ -4,7 +4,7 @@ export function Card({ className, ...props }) {
   return (
     <div
       className={cn(
-        "rounded-3xl border border-white/10 bg-slate-950/50 shadow-[0_30px_120px_rgba(15,23,42,0.28)] backdrop-blur-xl",
+        "rounded-xl border border-zinc-200 bg-white text-zinc-950 shadow-sm",
         className,
       )}
       {...props}
@@ -22,7 +22,7 @@ export function CardTitle({ className, ...props }) {
   return (
     <h3
       className={cn(
-        "text-lg font-semibold leading-none tracking-tight text-white",
+        "text-lg font-bold leading-none tracking-tight text-zinc-950",
         className,
       )}
       {...props}
@@ -31,7 +31,7 @@ export function CardTitle({ className, ...props }) {
 }
 
 export function CardDescription({ className, ...props }) {
-  return <p className={cn("text-sm text-slate-400", className)} {...props} />;
+  return <p className={cn("text-sm text-zinc-500", className)} {...props} />;
 }
 
 export function CardContent({ className, ...props }) {

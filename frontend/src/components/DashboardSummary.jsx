@@ -36,22 +36,25 @@ export default function DashboardSummary({ apiBase, token }) {
   }, [apiBase, token]);
 
   if (error) {
-    return <div className="text-sm text-rose-200">{error}</div>;
+    return <div className="text-sm text-rose-600">{error}</div>;
   }
 
   if (!summary) {
-    return <div className="text-sm text-slate-300">Loading dashboard...</div>;
+    return <div className="text-sm text-zinc-500">Loading dashboard...</div>;
   }
 
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map((card) => (
-        <Card key={card.key} className="border-white/10 bg-slate-950/50">
+        <Card key={card.key} className="border-zinc-200 bg-white shadow-sm">
           <CardContent className="space-y-3 p-4">
-            <Badge variant="outline" className="w-fit">
+            <Badge
+              variant="outline"
+              className="w-fit rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide"
+            >
               {card.label}
             </Badge>
-            <div className="text-2xl font-semibold text-white">
+            <div className="text-2xl font-semibold text-zinc-950">
               {summary[card.key] ?? 0}
             </div>
           </CardContent>

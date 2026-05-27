@@ -119,6 +119,30 @@ def list_runs(db: Session = Depends(get_db), current_user: User = Depends(get_cu
     ]
 
 
+@router.get("/tasks/assigned", response_model=list[dict])
+def get_assigned_tasks(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    runs = db.query(WorkflowRun).filter(WorkflowRun.status == "running").all()
+    assigned_tasks = []
+    for run in runs:
+        board = build_run_board(db, run)
+        for stage in board["stages"]:
+            if not stage["locked"]:
+                for task in stage["tasks"]:
+                    if task["assigned_to"] == current_user.id and task["status"] == "todo":
+                        assigned_tasks.append({
+                            "task_run_id": task["id"],
+                            "task_id": task["task_id"],
+                            "run_id": run.id,
+                            "workflow_title": board["workflow_title"],
+                            "stage_title": stage["title"],
+                            "title": task["title"],
+                            "description": task["description"],
+                            "priority": task["priority"],
+                            "status": task["status"],
+                        })
+    return assigned_tasks
+
+
 @router.get("/{workflow_id}", response_model=WorkflowOut)
 def get_workflow(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
