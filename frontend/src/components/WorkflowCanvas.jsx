@@ -1,10 +1,12 @@
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   Background,
   Controls,
   Handle,
   Position,
   ReactFlow,
+  useEdgesState,
+  useNodesState,
 } from "@xyflow/react";
 
 const stageColors = [
@@ -24,13 +26,14 @@ const priorityColors = {
   urgent: "#f43f5e",
 };
 
-function WorkflowNode({ data, selected }) {
+function WorkflowNode({ data, selected, onAddTask }) {
   const accent = data.accent || "#18181b";
+  const canAddTask = data.kind === "stage" && typeof onAddTask === "function";
 
   return (
     <div
       className={[
-        "w-[220px] overflow-hidden rounded-xl border bg-white shadow-sm transition-all",
+        "relative w-[220px] overflow-hidden rounded-xl border bg-white shadow-sm transition-all cursor-grab active:cursor-grabbing",
         selected
           ? "border-zinc-900 ring-2 ring-zinc-900/10"
           : "border-zinc-200",
@@ -62,6 +65,19 @@ function WorkflowNode({ data, selected }) {
           </p>
         ) : null}
       </div>
+      {canAddTask ? (
+        <button
+          type="button"
+          aria-label={`Add task to ${data.title}`}
+          onClick={(event) => {
+            event.stopPropagation();
+            onAddTask(data.stageId);
+          }}
+          className="nodrag absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:bg-zinc-900 hover:text-white"
+        >
+          +
+        </button>
+      ) : null}
       <Handle
         type="target"
         position={Position.Top}
@@ -83,6 +99,49 @@ function WorkflowNode({ data, selected }) {
         }}
       />
     </div>
+  );
+}
+
+function PlaceholderNode({ data, selected, onCreate }) {
+  const canCreate = typeof onCreate === "function";
+
+  return (
+    <button
+      type="button"
+      onClick={(event) => {
+        event.stopPropagation();
+        onCreate?.(data.stageId);
+      }}
+      className={[
+        "relative flex h-[92px] w-[220px] items-center justify-center rounded-xl border border-dashed bg-white/90 px-4 text-left shadow-sm transition-all cursor-pointer",
+        selected
+          ? "border-zinc-900 ring-2 ring-zinc-900/10"
+          : "border-zinc-200",
+        canCreate ? "hover:border-zinc-900 hover:bg-zinc-50" : "opacity-70",
+      ].join(" ")}
+      aria-label={data.label}
+      disabled={!canCreate}
+    >
+      <div className="flex items-center gap-3">
+        <div className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 bg-zinc-50 text-lg font-semibold text-zinc-900">
+          +
+        </div>
+        <div>
+          <p className="text-sm font-semibold text-zinc-950">{data.title}</p>
+          <p className="text-xs text-zinc-500">{data.description}</p>
+        </div>
+      </div>
+      <Handle
+        type="target"
+        position={Position.Top}
+        style={{
+          width: 10,
+          height: 10,
+          background: "#09090b",
+          border: "2px solid #ffffff",
+        }}
+      />
+    </button>
   );
 }
 
@@ -110,6 +169,7 @@ function buildGraph(workflow) {
       position: { x: stageX, y: 70 },
       data: {
         kind: "stage",
+        stageId: stage.id ?? stageIndex,
         title: stage.title,
         description:
           stage.completion_rule ||
@@ -132,6 +192,8 @@ function buildGraph(workflow) {
         position: { x: taskX, y: taskY },
         data: {
           kind: "task",
+          stageId: stage.id ?? stageIndex,
+          taskId: task.id ?? taskIndex,
           title: task.title,
           description: task.description || "No task description yet.",
           label: "Task",
@@ -163,6 +225,32 @@ function buildGraph(workflow) {
       }
     });
 
+    const placeholderId = `placeholder-${stage.id ?? stageIndex}`;
+    const placeholderY = tasks.length
+      ? 250 + Math.ceil(tasks.length / 3) * 120 + 10
+      : 250;
+
+    nodes.push({
+      id: placeholderId,
+      type: "placeholderNode",
+      position: { x: stageX, y: placeholderY },
+      data: {
+        kind: "placeholder",
+        stageId: stage.id ?? stageIndex,
+        title: "Click to add a task",
+        description: "Create a new node in this stage",
+        label: `Add task to ${stage.title}`,
+      },
+    });
+
+    edges.push({
+      id: `edge-${stageId}-${placeholderId}`,
+      source: stageId,
+      target: placeholderId,
+      type: "smoothstep",
+      style: { stroke: "#d4d4d8", strokeWidth: 2, strokeDasharray: "6 6" },
+    });
+
     if (!tasks.length && stages[stageIndex + 1]) {
       const nextStageId = `stage-${stages[stageIndex + 1].id ?? stageIndex + 1}`;
       edges.push({
@@ -178,15 +266,47 @@ function buildGraph(workflow) {
   return { nodes, edges };
 }
 
-export function WorkflowCanvas({ workflow, selectedNodeId, onNodeSelect }) {
+export function WorkflowCanvas({
+  workflow,
+  selectedNodeId,
+  onNodeSelect,
+  onAddTask,
+}) {
   const graph = useMemo(() => buildGraph(workflow), [workflow]);
+  const [nodes, setNodes, onNodesChange] = useNodesState(graph.nodes);
+  const [edges, setEdges, onEdgesChange] = useEdgesState(graph.edges);
+
+  useEffect(() => {
+    setNodes((currentNodes) => {
+      const previousPositions = new Map(
+        currentNodes.map((node) => [node.id, node.position]),
+      );
+      return graph.nodes.map((node) => ({
+        ...node,
+        position: previousPositions.get(node.id) || node.position,
+      }));
+    });
+    setEdges(graph.edges);
+  }, [graph.edges, graph.nodes, setEdges, setNodes]);
+
   const nodeTypes = useMemo(
     () => ({
       workflowNode: (props) => (
-        <WorkflowNode {...props} selected={props.id === selectedNodeId} />
+        <WorkflowNode
+          {...props}
+          selected={props.id === selectedNodeId}
+          onAddTask={onAddTask}
+        />
+      ),
+      placeholderNode: (props) => (
+        <PlaceholderNode
+          {...props}
+          selected={props.id === selectedNodeId}
+          onCreate={onAddTask}
+        />
       ),
     }),
-    [selectedNodeId],
+    [onAddTask, selectedNodeId],
   );
 
   if (!workflow) {
@@ -200,13 +320,17 @@ export function WorkflowCanvas({ workflow, selectedNodeId, onNodeSelect }) {
   return (
     <div className="h-[560px] overflow-hidden rounded-2xl border border-zinc-200 bg-[radial-gradient(circle_at_1px_1px,_rgba(24,24,27,0.10)_1px,_transparent_0)] bg-[size:18px_18px] p-3">
       <ReactFlow
-        nodes={graph.nodes}
-        edges={graph.edges}
+        nodes={nodes}
+        edges={edges}
         nodeTypes={nodeTypes}
         fitView
-        nodesDraggable={false}
+        nodesDraggable
+        onNodesChange={onNodesChange}
+        onEdgesChange={onEdgesChange}
         nodesConnectable={false}
-        elementsSelectable={false}
+        elementsSelectable
+        panOnDrag
+        selectionOnDrag
         zoomOnDoubleClick={false}
         onNodeClick={(_, node) => onNodeSelect?.(node)}
         className="bg-transparent"
