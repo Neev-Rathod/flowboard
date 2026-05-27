@@ -20,32 +20,38 @@ from routers.workflows import router as workflows_router
 Base.metadata.create_all(bind=engine)
 
 
-def ensure_sqlite_columns() -> None:
-    if not str(engine.url).startswith("sqlite"):
-        return
+def ensure_compatibility_columns() -> None:
+    column_specs = {
+        "users": [
+            ("role", "VARCHAR(50) NOT NULL DEFAULT 'employee'"),
+            ("job_title", "VARCHAR(120) NOT NULL DEFAULT 'Employee'"),
+            ("company_id", "INTEGER"),
+            ("manager_id", "INTEGER"),
+        ],
+        "workflows": [
+            ("company_id", "INTEGER"),
+        ],
+        "tasks": [
+            ("completed_at", "TIMESTAMP"),
+        ],
+    }
 
     inspector = inspect(engine)
     with engine.begin() as connection:
-        user_columns = {column["name"] for column in inspector.get_columns("users")}
-        if "role" not in user_columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR(50) NOT NULL DEFAULT 'employee'"))
-        if "job_title" not in user_columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN job_title VARCHAR(120) NOT NULL DEFAULT 'Employee'"))
-        if "company_id" not in user_columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN company_id INTEGER"))
-        if "manager_id" not in user_columns:
-            connection.execute(text("ALTER TABLE users ADD COLUMN manager_id INTEGER"))
+        for table_name, columns in column_specs.items():
+            try:
+                existing_columns = {column["name"] for column in inspector.get_columns(table_name)}
+            except Exception:
+                continue
 
-        workflow_columns = {column["name"] for column in inspector.get_columns("workflows")}
-        if "company_id" not in workflow_columns:
-            connection.execute(text("ALTER TABLE workflows ADD COLUMN company_id INTEGER"))
-
-        task_columns = {column["name"] for column in inspector.get_columns("tasks")}
-        if "completed_at" not in task_columns:
-            connection.execute(text("ALTER TABLE tasks ADD COLUMN completed_at DATETIME"))
+            for column_name, column_definition in columns:
+                if column_name in existing_columns:
+                    continue
+                connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"))
+                existing_columns.add(column_name)
 
 
-ensure_sqlite_columns()
+ensure_compatibility_columns()
 
 
 app = FastAPI(title="Flowboard API")
