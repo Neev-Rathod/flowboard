@@ -1,4 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
+import { GripVertical, Plus, Play, RefreshCw, Trash2 } from "lucide-react";
+
+import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
+import { Button } from "./ui/button";
+import { Input } from "./ui/input";
+import { Badge } from "./ui/badge";
 
 function reorder(array, fromIndex, toIndex) {
   const next = [...array];
@@ -9,10 +15,12 @@ function reorder(array, fromIndex, toIndex) {
 
 export default function WorkflowList({ apiBase, token }) {
   const [workflows, setWorkflows] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [expandedId, setExpandedId] = useState(null);
   const [title, setTitle] = useState("");
   const [stageTitle, setStageTitle] = useState("");
+  const [assigneeByWorkflow, setAssigneeByWorkflow] = useState({});
 
   const headers = useMemo(
     () => ({
@@ -24,10 +32,18 @@ export default function WorkflowList({ apiBase, token }) {
 
   const loadWorkflows = async () => {
     try {
-      const res = await fetch(`${apiBase}/workflows/`, { headers });
-      if (!res.ok) throw new Error("Failed to load workflows");
-      const data = await res.json();
-      setWorkflows(Array.isArray(data) ? data : []);
+      const [workflowsResponse, usersResponse] = await Promise.all([
+        fetch(`${apiBase}/workflows/`, { headers }),
+        fetch(`${apiBase}/organization/users`, { headers }),
+      ]);
+
+      if (!workflowsResponse.ok) throw new Error("Failed to load workflows");
+      if (!usersResponse.ok) throw new Error("Failed to load users");
+
+      const workflowsPayload = await workflowsResponse.json();
+      const usersPayload = await usersResponse.json();
+      setWorkflows(Array.isArray(workflowsPayload) ? workflowsPayload : []);
+      setUsers(Array.isArray(usersPayload) ? usersPayload : []);
     } catch (error) {
       console.error(error);
     } finally {
@@ -90,31 +106,6 @@ export default function WorkflowList({ apiBase, token }) {
     }
   };
 
-  const loadWorkflowDetail = async (workflowId) => {
-    const res = await fetch(`${apiBase}/workflows/${workflowId}`, { headers });
-    if (!res.ok) throw new Error("Failed to load workflow");
-    return res.json();
-  };
-
-  const toggleExpanded = async (workflowId) => {
-    if (expandedId === workflowId) {
-      setExpandedId(null);
-      return;
-    }
-
-    try {
-      const detail = await loadWorkflowDetail(workflowId);
-      setWorkflows((current) =>
-        current.map((workflow) =>
-          workflow.id === workflowId ? detail : workflow,
-        ),
-      );
-      setExpandedId(workflowId);
-    } catch (error) {
-      console.error(error);
-    }
-  };
-
   const createStage = async (workflowId) => {
     if (!stageTitle.trim()) return;
     try {
@@ -171,91 +162,132 @@ export default function WorkflowList({ apiBase, token }) {
     await reorderStages(workflowId, nextStages);
   };
 
-  if (loading)
+  const startRun = async (workflowId) => {
+    try {
+      const response = await fetch(`${apiBase}/workflows/${workflowId}/runs`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          workflow_id: workflowId,
+          assigned_to: assigneeByWorkflow[workflowId]
+            ? Number(assigneeByWorkflow[workflowId])
+            : null,
+        }),
+      });
+      if (!response.ok) throw new Error("Unable to start run");
+      await loadWorkflows();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const startRunForAssignee = (workflowId, assignedTo) => {
+    setAssigneeByWorkflow((current) => ({
+      ...current,
+      [workflowId]: assignedTo,
+    }));
+  };
+
+  if (loading) {
     return <div className="text-sm text-slate-300">Loading workflows...</div>;
+  }
 
   return (
     <div className="space-y-5">
       <div className="flex flex-col gap-3 sm:flex-row">
-        <input
+        <Input
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="New workflow title"
-          className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-3 text-sm text-white outline-none placeholder:text-slate-500 focus:border-sky-400/50"
+          className="w-full"
         />
-        <button
-          type="button"
-          onClick={createWorkflow}
-          className="rounded-2xl bg-sky-400 px-4 py-3 text-sm font-semibold text-slate-950 transition hover:bg-sky-300"
-        >
+        <Button type="button" onClick={createWorkflow} className="sm:w-auto">
+          <Plus className="h-4 w-4" />
           Create
-        </button>
+        </Button>
       </div>
 
       <div className="space-y-3">
         {workflows.length === 0 ? (
-          <div className="rounded-2xl border border-white/10 bg-white/5 p-4 text-sm text-slate-300">
-            No workflows yet.
-          </div>
+          <Card className="border-white/10 bg-white/5">
+            <CardContent className="p-4 text-sm text-slate-300">
+              No workflows yet.
+            </CardContent>
+          </Card>
         ) : (
           workflows.map((workflow) => {
             const stages = workflow.stages || [];
 
             return (
-              <div
+              <Card
                 key={workflow.id}
-                className="rounded-3xl border border-white/10 bg-white/5 p-4"
+                className="border-white/10 bg-slate-950/50"
               >
-                <div className="flex items-start justify-between gap-4">
-                  <div>
-                    <div className="text-base font-semibold text-white">
-                      {workflow.title}
+                <CardHeader className="flex items-start justify-between gap-4 p-4">
+                  <div className="space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <CardTitle className="text-base">
+                        {workflow.title}
+                      </CardTitle>
+                      <Badge variant="outline">{workflow.visibility}</Badge>
+                      {workflow.is_template ? (
+                        <Badge variant="secondary">template</Badge>
+                      ) : null}
                     </div>
-                    <div className="mt-1 text-xs text-slate-400">
+                    <p className="text-sm text-slate-400">
                       {workflow.description || "No description"}
-                    </div>
+                    </p>
                   </div>
                   <div className="flex flex-wrap gap-2">
-                    <button
+                    <Button
                       type="button"
-                      onClick={() => toggleExpanded(workflow.id)}
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200"
+                      variant="secondary"
+                      size="sm"
+                      onClick={() =>
+                        setExpandedId(
+                          expandedId === workflow.id ? null : workflow.id,
+                        )
+                      }
                     >
-                      {expandedId === workflow.id ? "Hide stages" : "Manage"}
-                    </button>
-                    <button
+                      <RefreshCw className="h-4 w-4" />
+                      {expandedId === workflow.id ? "Hide" : "Manage"}
+                    </Button>
+                    <Button
                       type="button"
+                      variant="outline"
+                      size="sm"
                       onClick={() => duplicate(workflow.id)}
-                      className="rounded-full border border-white/10 px-3 py-1 text-xs text-slate-200"
                     >
                       Duplicate
-                    </button>
-                    <button
+                    </Button>
+                    <Button
                       type="button"
+                      variant="destructive"
+                      size="sm"
                       onClick={() => remove(workflow.id)}
-                      className="rounded-full border border-rose-400/20 px-3 py-1 text-xs text-rose-200"
                     >
+                      <Trash2 className="h-4 w-4" />
                       Delete
-                    </button>
+                    </Button>
                   </div>
-                </div>
+                </CardHeader>
 
                 {expandedId === workflow.id ? (
-                  <div className="mt-4 space-y-4 border-t border-white/10 pt-4">
-                    <div className="flex flex-col gap-3 sm:flex-row">
-                      <input
+                  <CardContent className="space-y-4 border-t border-white/10 p-4">
+                    <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
+                      <Input
                         value={stageTitle}
                         onChange={(event) => setStageTitle(event.target.value)}
                         placeholder="Add stage"
-                        className="w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 py-2.5 text-sm text-white outline-none placeholder:text-slate-500"
                       />
-                      <button
+                      <Button
                         type="button"
+                        variant="secondary"
                         onClick={() => createStage(workflow.id)}
-                        className="rounded-2xl bg-white px-4 py-2.5 text-sm font-semibold text-slate-950"
                       >
+                        <Plus className="h-4 w-4" />
                         Add stage
-                      </button>
+                      </Button>
                     </div>
 
                     <div className="grid gap-3">
@@ -282,26 +314,50 @@ export default function WorkflowList({ apiBase, token }) {
                               );
                               onStageDrop(workflow.id, fromIndex, index);
                             }}
-                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/50 px-4 py-3"
+                            className="flex items-center justify-between rounded-2xl border border-white/10 bg-slate-950/60 px-4 py-3"
                           >
                             <div>
-                              <div className="text-sm font-medium text-white">
+                              <div className="flex items-center gap-2 text-sm font-medium text-white">
+                                <GripVertical className="h-4 w-4 text-slate-500" />
                                 {stage.title}
                               </div>
                               <div className="text-xs text-slate-400">
                                 Position {stage.position ?? index + 1}
                               </div>
                             </div>
-                            <div className="text-xs uppercase tracking-[0.18em] text-slate-500">
-                              Drag
-                            </div>
+                            <Badge variant="outline">Drag</Badge>
                           </div>
                         ))
                       )}
                     </div>
-                  </div>
+
+                    <div className="flex flex-col gap-3 rounded-2xl border border-white/10 bg-white/5 p-4 lg:flex-row lg:items-center">
+                      <select
+                        value={assigneeByWorkflow[workflow.id] || ""}
+                        onChange={(event) =>
+                          startRunForAssignee(workflow.id, event.target.value)
+                        }
+                        className="h-11 w-full rounded-2xl border border-white/10 bg-slate-950/70 px-4 text-sm text-white outline-none lg:max-w-xs"
+                      >
+                        <option value="">Assign run to...</option>
+                        {users.map((candidate) => (
+                          <option key={candidate.id} value={candidate.id}>
+                            {candidate.username} - {candidate.job_title}
+                          </option>
+                        ))}
+                      </select>
+                      <Button
+                        type="button"
+                        onClick={() => startRun(workflow.id)}
+                        className="lg:w-auto"
+                      >
+                        <Play className="h-4 w-4" />
+                        Start run
+                      </Button>
+                    </div>
+                  </CardContent>
                 ) : null}
-              </div>
+              </Card>
             );
           })
         )}

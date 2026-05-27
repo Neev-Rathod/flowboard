@@ -15,6 +15,8 @@ def main() -> None:
         "/auth/register",
         "/auth/login",
         "/auth/me",
+        "/organization/tree",
+        "/organization/users",
         "/workflows/",
         "/workflows/runs",
         "/workflows/dashboard/summary",

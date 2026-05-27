@@ -5,6 +5,8 @@ from dependencies import get_db, get_current_user
 from models import Workflow, WorkflowStage, Task, WorkflowRun, TaskRun
 from models import User
 from schemas import (
+    WorkflowRunCreate,
+    WorkflowRunOut,
     WorkflowCreate,
     WorkflowOut,
     StageCreate,
@@ -12,6 +14,7 @@ from schemas import (
     TaskCreate,
     TaskOut,
 )
+from routers.organization import is_descendant
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
@@ -22,6 +25,7 @@ def create_workflow(payload: WorkflowCreate, db: Session = Depends(get_db), curr
         title=payload.title,
         description=payload.description,
         category=payload.category,
+        company_id=current_user.company_id,
         created_by=current_user.id if current_user is not None else 0,
         is_template=payload.is_template,
         visibility=payload.visibility,
@@ -90,6 +94,7 @@ def duplicate_workflow(workflow_id: int, db: Session = Depends(get_db), current_
         title=f"{wf.title} (Copy)",
         description=wf.description,
         category=wf.category,
+        company_id=wf.company_id,
         created_by=current_user.id if current_user else 0,
         is_template=wf.is_template,
         visibility=wf.visibility,
@@ -156,6 +161,7 @@ def import_workflow(payload: dict, db: Session = Depends(get_db), current_user: 
         title=payload.get("title"),
         description=payload.get("description"),
         category=payload.get("category"),
+        company_id=current_user.company_id,
         created_by=(current_user.id if current_user else 0),
         is_template=payload.get("is_template", False),
         visibility=payload.get("visibility", "private"),
@@ -292,12 +298,29 @@ def delete_task(task_id: int, db: Session = Depends(get_db), current_user: User 
     return None
 
 
-@router.post("/{workflow_id}/runs", response_model=dict, status_code=status.HTTP_201_CREATED)
-def start_workflow_run(workflow_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+@router.post("/{workflow_id}/runs", response_model=WorkflowRunOut, status_code=status.HTTP_201_CREATED)
+def start_workflow_run(
+    workflow_id: int,
+    payload: WorkflowRunCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     wf = db.query(Workflow).filter(Workflow.id == workflow_id).first()
     if wf is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow not found")
-    run = WorkflowRun(workflow_id=workflow_id, started_by=(current_user.id if current_user else 0))
+
+    if payload.assigned_to is not None:
+        assignee = db.query(User).filter(User.id == payload.assigned_to).first()
+        if assignee is None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Assignee not found")
+        if current_user.role != "admin" and not is_descendant(db, current_user.id, assignee.id):
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Assignee must be below your hierarchy")
+
+    run = WorkflowRun(
+        workflow_id=workflow_id,
+        started_by=current_user.id if current_user else 0,
+        assigned_to=payload.assigned_to,
+    )
     db.add(run)
     db.commit()
     db.refresh(run)
@@ -309,7 +332,7 @@ def start_workflow_run(workflow_id: int, db: Session = Depends(get_db), current_
             db.add(tr)
     db.commit()
 
-    return {"id": run.id, "workflow_id": run.workflow_id, "status": run.status}
+    return run
 
 
 @router.post("/runs/{run_id}/tasks/{task_id}/complete", response_model=dict)

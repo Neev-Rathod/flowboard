@@ -2,12 +2,12 @@
 
 This is a workflow builder platform with a React Vite frontend, FastAPI backend, and multi-container Docker configuration.
 
-The app includes JWT authentication plus a workflow system with templates, stages, tasks, workflow runs, stage ordering, import/export, and a dashboard summary.
+The app includes JWT authentication plus a company hierarchy model with roles, job titles, reporting lines, workflow templates, stages, tasks, workflow runs, stage ordering, import/export, and a dashboard summary.
 
 ## Folder Structure
 
-- `frontend/`: React app scaffolded with Vite.
-- `backend/`: FastAPI app with auth, workflow CRUD, stage/task management, workflow runs, and dashboard endpoints.
+- `frontend/`: React app scaffolded with Vite, React Router, and shadcn-style UI primitives.
+- `backend/`: FastAPI app with auth, organization hierarchy, workflow CRUD, stage/task management, workflow runs, and dashboard endpoints.
 
 ## Local Development (Without Docker)
 
@@ -30,12 +30,28 @@ If you deploy the frontend somewhere other than `localhost`, set `VITE_API_URL` 
 
 ## Workflow Features
 
+- Company roles: admin, HR, manager, and employee-style users with reporting lines.
+- Admin/org tree view for visual hierarchy management.
+- Routed UI with login, dashboard, workflows, and organization pages.
 - Create, edit, duplicate, archive, and delete workflows.
 - Add stages and reorder them with drag and drop.
 - Create tasks under stages.
 - Start workflow runs and complete task runs.
 - Save workflows as templates, export them as JSON, and import them back.
 - View dashboard summary metrics for workflows, runs, tasks, and completion percentage.
+
+## Demo Seed
+
+On startup the backend seeds a demo company named `Northstar Systems` with roughly 25 users, including admin, CEO, HR, finance, sales, CTO, managers, developers, QA, support, and marketing roles.
+
+Default demo password for seeded users: `password123`
+
+Suggested demo login:
+
+- Username: `admin1`
+- Password: `password123`
+
+The seed is idempotent, so it will only add the demo company and users when they are not already present.
 
 ## Backend API Surface
 

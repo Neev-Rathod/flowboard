@@ -1,5 +1,8 @@
 import { useEffect, useState } from "react";
 
+import { Badge } from "./ui/badge";
+import { Card, CardContent } from "./ui/card";
+
 const cards = [
   { key: "workflow_count", label: "Workflows" },
   { key: "run_count", label: "Runs" },
@@ -43,17 +46,16 @@ export default function DashboardSummary({ apiBase, token }) {
   return (
     <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
       {cards.map((card) => (
-        <div
-          key={card.key}
-          className="rounded-2xl border border-white/10 bg-slate-950/50 p-4"
-        >
-          <div className="text-xs uppercase tracking-[0.2em] text-slate-500">
-            {card.label}
-          </div>
-          <div className="mt-2 text-2xl font-semibold text-white">
-            {summary[card.key] ?? 0}
-          </div>
-        </div>
+        <Card key={card.key} className="border-white/10 bg-slate-950/50">
+          <CardContent className="space-y-3 p-4">
+            <Badge variant="outline" className="w-fit">
+              {card.label}
+            </Badge>
+            <div className="text-2xl font-semibold text-white">
+              {summary[card.key] ?? 0}
+            </div>
+          </CardContent>
+        </Card>
       ))}
     </div>
   );

@@ -8,6 +8,10 @@ class UserCreate(BaseModel):
     username: str
     email: str
     password: str
+    role: str = "employee"
+    job_title: str = "Employee"
+    company_id: Optional[int] = None
+    manager_id: Optional[int] = None
 
 
 class UserLogin(BaseModel):
@@ -21,6 +25,10 @@ class UserOut(BaseModel):
     id: int
     username: str
     email: str
+    role: str
+    job_title: str
+    company_id: Optional[int] = None
+    manager_id: Optional[int] = None
 
 
 class AuthResponse(BaseModel):
@@ -93,6 +101,7 @@ class WorkflowOut(WorkflowBase):
 
 class WorkflowRunCreate(BaseModel):
     workflow_id: int
+    assigned_to: Optional[int] = None
 
 
 class WorkflowRunOut(BaseModel):
@@ -101,6 +110,7 @@ class WorkflowRunOut(BaseModel):
     id: int
     workflow_id: int
     started_by: int
+    assigned_to: Optional[int] = None
     status: str
     started_at: Optional[datetime]
     completed_at: Optional[datetime]
@@ -115,3 +125,48 @@ class TaskRunOut(BaseModel):
     status: str
     completed_at: Optional[datetime]
     notes: Optional[str]
+
+
+class OrgUserCreate(BaseModel):
+    username: str
+    email: str
+    password: str
+    role: str = "employee"
+    job_title: str = "Employee"
+    company_id: Optional[int] = None
+    manager_id: Optional[int] = None
+
+
+class OrgUserUpdate(BaseModel):
+    role: Optional[str] = None
+    job_title: Optional[str] = None
+    manager_id: Optional[int] = None
+
+
+class OrgUserOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    username: str
+    email: str
+    role: str
+    job_title: str
+    company_id: Optional[int] = None
+    manager_id: Optional[int] = None
+
+
+class CompanyBase(BaseModel):
+    name: str
+    domain: Optional[str] = None
+
+
+class CompanyCreate(CompanyBase):
+    pass
+
+
+class CompanyOut(CompanyBase):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    created_at: Optional[datetime]
+
