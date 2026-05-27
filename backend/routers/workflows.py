@@ -7,6 +7,7 @@ from models import User
 from schemas import (
     WorkflowRunCreate,
     WorkflowRunOut,
+    WorkflowRunBoardOut,
     WorkflowCreate,
     WorkflowOut,
     StageCreate,
@@ -15,6 +16,73 @@ from schemas import (
     TaskOut,
 )
 from routers.organization import is_descendant
+
+
+def build_run_board(db: Session, run: WorkflowRun) -> dict:
+    workflow = db.query(Workflow).filter(Workflow.id == run.workflow_id).first()
+    stages = sorted(workflow.stages, key=lambda stage: stage.position or 0)
+    task_runs = (
+        db.query(TaskRun, Task, WorkflowStage)
+        .join(Task, TaskRun.task_id == Task.id)
+        .join(WorkflowStage, Task.stage_id == WorkflowStage.id)
+        .filter(TaskRun.workflow_run_id == run.id)
+        .order_by(WorkflowStage.position.asc(), Task.id.asc())
+        .all()
+    )
+
+    stage_completion: dict[int, bool] = {}
+    for stage in stages:
+        stage_task_runs = [item for item in task_runs if item[2].id == stage.id]
+        stage_completion[stage.id] = bool(stage_task_runs) and all(task_run.status == "completed" for task_run, _, _ in stage_task_runs)
+
+    active_stage_position = None
+    for stage in stages:
+        if not stage_completion.get(stage.id):
+            active_stage_position = stage.position
+            break
+
+    board_stages = []
+    for stage in stages:
+        locked = active_stage_position is not None and stage.position > active_stage_position
+        stage_task_runs = [item for item in task_runs if item[2].id == stage.id]
+        board_stages.append(
+            {
+                "id": stage.id,
+                "title": stage.title,
+                "position": stage.position,
+                "color": stage.color,
+                "locked": locked,
+                "completed": stage_completion.get(stage.id, False),
+                "tasks": [
+                    {
+                        "id": task_run.id,
+                        "task_id": task.id,
+                        "title": task.title,
+                        "description": task.description,
+                        "priority": task.priority,
+                        "status": task_run.status,
+                        "assigned_to": task.assigned_to,
+                        "stage_id": stage.id,
+                        "stage_title": stage.title,
+                        "locked": locked,
+                    }
+                    for task_run, task, _stage in stage_task_runs
+                ],
+            }
+        )
+
+    return {
+        "id": run.id,
+        "workflow_id": workflow.id,
+        "workflow_title": workflow.title,
+        "started_by": run.started_by,
+        "assigned_to": run.assigned_to,
+        "status": run.status,
+        "started_at": run.started_at,
+        "completed_at": run.completed_at,
+        "current_stage_position": active_stage_position,
+        "stages": board_stages,
+    }
 
 router = APIRouter(prefix="/workflows", tags=["workflows"])
 
@@ -335,11 +403,34 @@ def start_workflow_run(
     return run
 
 
+@router.get("/runs/{run_id}", response_model=WorkflowRunBoardOut)
+def get_workflow_run_board(run_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    run = db.query(WorkflowRun).filter(WorkflowRun.id == run_id).first()
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow run not found")
+    return build_run_board(db, run)
+
+
 @router.post("/runs/{run_id}/tasks/{task_id}/complete", response_model=dict)
 def complete_task_run(run_id: int, task_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     tr = db.query(TaskRun).filter(TaskRun.workflow_run_id == run_id, TaskRun.task_id == task_id).first()
     if tr is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task run not found")
+
+    run = db.query(WorkflowRun).filter(WorkflowRun.id == run_id).first()
+    if run is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Workflow run not found")
+
+    board = build_run_board(db, run)
+    stage_for_task = next(
+        (stage for stage in board["stages"] if any(task["task_id"] == task_id for task in stage["tasks"])),
+        None,
+    )
+    if stage_for_task is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Task stage not found")
+    if stage_for_task["locked"]:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="This stage is locked until earlier stages are completed")
+
     tr.status = "completed"
     from datetime import datetime
 
@@ -347,6 +438,14 @@ def complete_task_run(run_id: int, task_id: int, db: Session = Depends(get_db), 
     db.add(tr)
     db.commit()
     db.refresh(tr)
+
+    updated_board = build_run_board(db, run)
+    if all(stage["completed"] for stage in updated_board["stages"]):
+        run.status = "completed"
+        run.completed_at = datetime.utcnow()
+        db.add(run)
+        db.commit()
+
     return {"id": tr.id, "status": tr.status, "completed_at": tr.completed_at}
 
 

@@ -5,6 +5,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
 import { LoginPage } from "./pages/LoginPage";
+import { RunBoardPage } from "./pages/RunBoardPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
 import { WorkflowsPage } from "./pages/WorkflowsPage";
 
@@ -24,6 +25,7 @@ function App() {
             <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/workflows" element={<WorkflowsPage />} />
+            <Route path="/runs/:runId" element={<RunBoardPage />} />
             <Route path="/organization" element={<OrganizationPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />
           </Route>

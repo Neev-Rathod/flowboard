@@ -37,6 +37,7 @@ If you deploy the frontend somewhere other than `localhost`, set `VITE_API_URL` 
 - Add stages and reorder them with drag and drop.
 - Create tasks under stages.
 - Start workflow runs and complete task runs.
+- Workflow runs advance stage by stage: earlier stages must finish before the next stage unlocks.
 - Save workflows as templates, export them as JSON, and import them back.
 - View dashboard summary metrics for workflows, runs, tasks, and completion percentage.
 

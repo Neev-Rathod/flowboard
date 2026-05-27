@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { GripVertical, Plus, Play, RefreshCw, Trash2 } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "./ui/card";
@@ -21,6 +22,7 @@ export default function WorkflowList({ apiBase, token }) {
   const [title, setTitle] = useState("");
   const [stageTitle, setStageTitle] = useState("");
   const [assigneeByWorkflow, setAssigneeByWorkflow] = useState({});
+  const navigate = useNavigate();
 
   const headers = useMemo(
     () => ({
@@ -175,7 +177,9 @@ export default function WorkflowList({ apiBase, token }) {
         }),
       });
       if (!response.ok) throw new Error("Unable to start run");
+      const payload = await response.json();
       await loadWorkflows();
+      navigate(`/runs/${payload.id}`);
     } catch (error) {
       console.error(error);
     }

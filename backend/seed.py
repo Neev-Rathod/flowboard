@@ -46,25 +46,100 @@ DEMO_WORKFLOWS = [
         "title": "Employee Onboarding",
         "description": "Hire-to-productivity onboarding pipeline.",
         "category": "hr",
-        "stages": ["Offer Accepted", "Provision Access", "First Week", "First Month"],
+        "stages": [
+            {
+                "title": "Offer Accepted",
+                "tasks": [
+                    {"title": "Prepare laptop and accounts", "assignee": "hr1"},
+                    {"title": "Create employee record", "assignee": "hrbp1"},
+                ],
+            },
+            {
+                "title": "Provision Access",
+                "tasks": [
+                    {"title": "Email and calendar setup", "assignee": "opsmgr1"},
+                    {"title": "Grant tool access", "assignee": "devops1"},
+                ],
+            },
+            {
+                "title": "First Week",
+                "tasks": [
+                    {"title": "Manager intro and team sync", "assignee": "engmgr1"},
+                    {"title": "Policy review", "assignee": "hr1"},
+                ],
+            },
+            {
+                "title": "First Month",
+                "tasks": [
+                    {"title": "Performance check-in", "assignee": "ceo1"},
+                ],
+            },
+        ],
     },
     {
-        "title": "Software Release",
-        "description": "Engineering delivery workflow from planning to deployment.",
+        "title": "Website Launch",
+        "description": "Build frontend, backend, database, QA, and deploy the release.",
         "category": "engineering",
-        "stages": ["Planning", "Build", "QA", "Deploy", "Monitor"],
+        "stages": [
+            {
+                "title": "Planning",
+                "tasks": [
+                    {"title": "Define scope and milestones", "assignee": "productowner1"},
+                    {"title": "Approve delivery plan", "assignee": "prodmgr1"},
+                ],
+            },
+            {
+                "title": "Build Frontend",
+                "tasks": [
+                    {"title": "Create landing page UI", "assignee": "frontenddev1"},
+                    {"title": "Wire routing and forms", "assignee": "frontenddev2"},
+                ],
+            },
+            {
+                "title": "Build Backend",
+                "tasks": [
+                    {"title": "Create API endpoints", "assignee": "backenddev1"},
+                    {"title": "Model database entities", "assignee": "backenddev2"},
+                ],
+            },
+            {
+                "title": "QA",
+                "tasks": [
+                    {"title": "Test user flows", "assignee": "qa1"},
+                    {"title": "Regression checklist", "assignee": "qalead1"},
+                ],
+            },
+            {
+                "title": "Deploy",
+                "tasks": [
+                    {"title": "Prepare CI/CD release", "assignee": "devops1"},
+                    {"title": "Smoke verify production", "assignee": "devops1"},
+                ],
+            },
+        ],
     },
     {
         "title": "Sales Deal Flow",
         "description": "Lead qualification and closing workflow for sales teams.",
         "category": "sales",
-        "stages": ["Lead Qualify", "Discovery", "Proposal", "Negotiation", "Closed Won"],
+        "stages": [
+            {"title": "Lead Qualify", "tasks": [{"title": "Research account", "assignee": "salesrep1"}]},
+            {"title": "Discovery", "tasks": [{"title": "Discovery call", "assignee": "salesrep2"}]},
+            {"title": "Proposal", "tasks": [{"title": "Draft proposal", "assignee": "salesmgr1"}]},
+            {"title": "Negotiation", "tasks": [{"title": "Discount approval", "assignee": "salesdir1"}]},
+            {"title": "Closed Won", "tasks": [{"title": "Kickoff handoff", "assignee": "salesrep1"}]},
+        ],
     },
     {
         "title": "Finance Approval Chain",
         "description": "Approvals for invoices, budgets, and procurement.",
         "category": "finance",
-        "stages": ["Request", "Review", "Approval", "Execution"],
+        "stages": [
+            {"title": "Request", "tasks": [{"title": "Submit budget request", "assignee": "finanalyst1"}]},
+            {"title": "Review", "tasks": [{"title": "Validate request", "assignee": "finmgr1"}]},
+            {"title": "Approval", "tasks": [{"title": "Approve expenditure", "assignee": "cfo1"}]},
+            {"title": "Execution", "tasks": [{"title": "Release funds", "assignee": "opsmgr1"}]},
+        ],
     },
 ]
 
@@ -151,8 +226,8 @@ def ensure_demo_seed(db: Session) -> bool:
         db.add(workflow)
         db.flush()
 
-        stage_objects: list[WorkflowStage] = []
-        for position, stage_title in enumerate(workflow_data["stages"]):
+        for position, stage_data in enumerate(workflow_data["stages"]):
+            stage_title = stage_data["title"]
             stage = WorkflowStage(
                 workflow_id=workflow.id,
                 title=stage_title,
@@ -162,17 +237,21 @@ def ensure_demo_seed(db: Session) -> bool:
             )
             db.add(stage)
             db.flush()
-            stage_objects.append(stage)
 
-            task = Task(
-                stage_id=stage.id,
-                title=f"{stage_title} Task",
-                description=f"Complete {stage_title.lower()} work for {workflow.title}.",
-                priority="high" if position == 0 else "normal",
-                status="todo",
-                assigned_to=users_by_username["admin1"].id,
-            )
-            db.add(task)
+            for task_index, task_data in enumerate(stage_data["tasks"]):
+                assignee = users_by_username.get(task_data.get("assignee", "admin1"), users_by_username["admin1"])
+                task = Task(
+                    stage_id=stage.id,
+                    title=task_data["title"],
+                    description=task_data.get(
+                        "description",
+                        f"Complete {task_data['title'].lower()} for {workflow.title}.",
+                    ),
+                    priority=task_data.get("priority", "high" if position == 0 else "normal"),
+                    status="todo",
+                    assigned_to=assignee.id,
+                )
+                db.add(task)
         db.flush()
 
         workflow_run = WorkflowRun(

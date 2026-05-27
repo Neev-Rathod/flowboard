@@ -127,6 +127,42 @@ class TaskRunOut(BaseModel):
     notes: Optional[str]
 
 
+class WorkflowRunTaskBoardOut(BaseModel):
+    id: int
+    task_id: int
+    title: str
+    description: Optional[str] = None
+    priority: Optional[str] = None
+    status: str
+    assigned_to: Optional[int] = None
+    stage_id: int
+    stage_title: str
+    locked: bool
+
+
+class WorkflowRunStageBoardOut(BaseModel):
+    id: int
+    title: str
+    position: int
+    color: Optional[str] = None
+    locked: bool
+    completed: bool
+    tasks: List[WorkflowRunTaskBoardOut] = []
+
+
+class WorkflowRunBoardOut(BaseModel):
+    id: int
+    workflow_id: int
+    workflow_title: str
+    started_by: int
+    assigned_to: Optional[int] = None
+    status: str
+    started_at: Optional[datetime]
+    completed_at: Optional[datetime]
+    current_stage_position: Optional[int] = None
+    stages: List[WorkflowRunStageBoardOut] = []
+
+
 class OrgUserCreate(BaseModel):
     username: str
     email: str
