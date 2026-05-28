@@ -214,6 +214,14 @@ export function LoginPage() {
         <div className="grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
           <Card className="border-zinc-800 bg-zinc-950/80 shadow-[0_30px_120px_-50px_rgba(0,0,0,0.85)] backdrop-blur-xl">
             <CardHeader className="space-y-5">
+              <Button
+  type="button"
+  variant="outline"
+  className="h-11 rounded-xl border-zinc-800 bg-zinc-950 px-5 font-semibold text-zinc-100 hover:bg-zinc-900"
+  onClick={() => navigate("/")}
+>
+  Back to landing page
+</Button>
               <Badge
                 variant="outline"
                 className="w-fit rounded-full border-violet-500/30 bg-violet-500/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-[0.3em] text-violet-200"
