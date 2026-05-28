@@ -27,6 +27,7 @@ class User(Base):
     job_title = Column(String(120), nullable=False, default="Employee")
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    is_attached = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     company = relationship("Company", back_populates="users")

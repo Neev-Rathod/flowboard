@@ -29,6 +29,7 @@ class UserOut(BaseModel):
     job_title: str
     company_id: Optional[int] = None
     manager_id: Optional[int] = None
+    is_attached: bool = False
 
 
 class AuthResponse(BaseModel):
@@ -149,6 +150,7 @@ class OrgUserUpdate(BaseModel):
     role: Optional[str] = None
     job_title: Optional[str] = None
     manager_id: Optional[int] = None
+    is_attached: Optional[bool] = None
 
 
 class OrgUserOut(BaseModel):
@@ -161,6 +163,7 @@ class OrgUserOut(BaseModel):
     job_title: str
     company_id: Optional[int] = None
     manager_id: Optional[int] = None
+    is_attached: bool = False
 
 
 class CompanyBase(BaseModel):

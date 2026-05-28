@@ -453,10 +453,6 @@ function WorkflowModalEditor({
     stageId: null,
   });
 
-  const updateWorkflowField = (field, value) => {
-    setDraft((current) => ({ ...current, [field]: value }));
-  };
-
   const addStage = () => {
     setDraft((current) => ({
       ...current,

@@ -21,6 +21,7 @@ def is_descendant(db: Session, manager_id: int, user_id: int) -> bool:
 
 
 def build_tree(users: list[User]) -> list[dict]:
+    attached_users = [user for user in users if user.is_attached]
     nodes = {
         user.id: {
             "id": user.id,
@@ -32,10 +33,10 @@ def build_tree(users: list[User]) -> list[dict]:
             "manager_id": user.manager_id,
             "children": [],
         }
-        for user in users
+        for user in attached_users
     }
     roots: list[dict] = []
-    for user in users:
+    for user in attached_users:
         node = nodes[user.id]
         if user.manager_id and user.manager_id in nodes:
             nodes[user.manager_id]["children"].append(node)
@@ -46,12 +47,12 @@ def build_tree(users: list[User]) -> list[dict]:
 
 @router.get("/users", response_model=list[OrgUserOut])
 def list_org_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    return db.query(User).order_by(User.id.asc()).all()
+    return db.query(User).order_by(User.is_attached.desc(), User.id.asc()).all()
 
 
 @router.get("/tree", response_model=list[dict])
 def get_org_tree(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
-    users = db.query(User).order_by(User.id.asc()).all()
+    users = db.query(User).order_by(User.is_attached.desc(), User.id.asc()).all()
     return build_tree(users)
 
 
@@ -71,6 +72,7 @@ def create_org_user(payload: OrgUserCreate, db: Session = Depends(get_db), curre
         job_title=payload.job_title,
         company_id=payload.company_id if payload.company_id is not None else current_user.company_id,
         manager_id=payload.manager_id,
+        is_attached=False,
     )
     db.add(user)
     db.commit()
@@ -102,6 +104,9 @@ def update_org_user(user_id: int, payload: OrgUserUpdate, db: Session = Depends(
         user.company_id = payload.company_id
     if payload.manager_id is not None:
         user.manager_id = payload.manager_id
+        user.is_attached = True
+    if payload.is_attached is not None:
+        user.is_attached = payload.is_attached
 
     db.add(user)
     db.commit()

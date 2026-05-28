@@ -201,6 +201,7 @@ def ensure_demo_seed(db: Session) -> bool:
             role=user_data["role"],
             job_title=user_data["job_title"],
             company_id=company.id,
+            is_attached=True,
         )
         db.add(user)
         db.flush()

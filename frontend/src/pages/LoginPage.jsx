@@ -14,7 +14,6 @@ import {
 } from "../components/ui/card";
 import { Checkbox } from "../components/ui/checkbox";
 import { Input } from "../components/ui/input";
-import { Separator } from "../components/ui/separator";
 
 const emptyForm = {
   username: "",
@@ -181,7 +180,7 @@ export function LoginPage() {
             </Badge>
             <div className="space-y-2">
               <CardTitle className="text-3xl font-semibold tracking-tight text-zinc-950">
-                Welcome to Shadcn Space
+                Welcome to FlowBoard
               </CardTitle>
               <CardDescription className="text-sm text-zinc-500">
                 Login to your account now
@@ -190,38 +189,6 @@ export function LoginPage() {
           </CardHeader>
 
           <CardContent className="space-y-5 pt-0">
-            <div className="grid gap-3 sm:grid-cols-2">
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-xl border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50"
-                disabled={submitting}
-              >
-                <span className="grid h-5 w-5 place-items-center rounded-full border border-zinc-200 text-[10px] font-bold text-blue-600">
-                  G
-                </span>
-                Sign in with Google
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                className="h-11 rounded-xl border-zinc-200 bg-white text-zinc-900 hover:bg-zinc-50"
-                disabled={submitting}
-              >
-                <span className="grid h-5 w-5 place-items-center rounded-md border border-zinc-200 bg-zinc-50 text-[10px] font-bold text-zinc-700">
-                  GH
-                </span>
-                Sign in with Github
-              </Button>
-            </div>
-
-            <div className="relative py-1">
-              <Separator />
-              <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-xs text-zinc-500">
-                or sign in with
-              </span>
-            </div>
-
             {error ? (
               <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
                 {error}

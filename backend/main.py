@@ -27,6 +27,7 @@ def ensure_compatibility_columns() -> None:
             ("job_title", "VARCHAR(120) NOT NULL DEFAULT 'Employee'"),
             ("company_id", "INTEGER"),
             ("manager_id", "INTEGER"),
+            ("is_attached", "BOOLEAN NOT NULL DEFAULT FALSE"),
         ],
         "workflows": [
             ("company_id", "INTEGER"),
@@ -49,6 +50,8 @@ def ensure_compatibility_columns() -> None:
                     continue
                 connection.execute(text(f"ALTER TABLE {table_name} ADD COLUMN {column_name} {column_definition}"))
                 existing_columns.add(column_name)
+                if table_name == "users" and column_name == "is_attached":
+                    connection.execute(text("UPDATE users SET is_attached = TRUE"))
 
 
 ensure_compatibility_columns()
