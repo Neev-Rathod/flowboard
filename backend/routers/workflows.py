@@ -49,6 +49,7 @@ def build_workflow_board(db: Session, workflow: Workflow) -> dict:
                     "priority": task.priority,
                     "status": task.status,
                     "assigned_to": task.assigned_to,
+                    "due_date": task.due_date,
                     "stage_id": stage.id,
                     "stage_title": stage.title,
                     "locked": locked,
@@ -140,6 +141,7 @@ def get_assigned_tasks(db: Session = Depends(get_db), current_user: User = Depen
                         "description": task["description"],
                         "priority": task["priority"],
                         "status": task["status"],
+                        "due_date": task.get("due_date"),
                         "notes": task.get("notes"),
                         "completed_at": task.get("completed_at"),
                     })

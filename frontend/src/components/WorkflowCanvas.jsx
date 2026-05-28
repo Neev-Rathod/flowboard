@@ -9,6 +9,8 @@ import {
   useNodesState,
 } from "@xyflow/react";
 
+import { getTaskLane, getTaskLaneLabel } from "../lib/taskStatus";
+
 const stageColors = [
   "#18181b",
   "#2563eb",
@@ -30,10 +32,16 @@ function WorkflowNode({ data, selected, onAddTask }) {
   const accent = data.accent || "#18181b";
   const canAddTask = data.kind === "stage" && typeof onAddTask === "function";
   const statusTone =
-    data.status === "done"
+    data.status === "completed"
       ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
       : data.status === "in-progress"
         ? "bg-sky-500/10 text-sky-700 border-sky-500/20"
+        : data.status === "backlog"
+          ? "bg-rose-500/10 text-rose-700 border-rose-500/20"
+          : data.status === "todo"
+            ? "bg-zinc-100 text-zinc-700 border-zinc-200"
+            : data.status === "done"
+              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
         : data.status === "pending"
           ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
           : "bg-zinc-100 text-zinc-700 border-zinc-200";
@@ -198,8 +206,25 @@ function buildGraph(workflow, users = []) {
     const stageAccent =
       stage.color || stageColors[stageIndex % stageColors.length];
     const tasks = stage.tasks || [];
-    const completedTasks = tasks.filter((task) => task.status === "completed");
-    const pendingTasks = tasks.filter((task) => task.status !== "completed");
+    const laneCounts = tasks.reduce(
+      (counts, task) => {
+        counts[getTaskLane(task)] += 1;
+        return counts;
+      },
+      { backlog: 0, in_progress: 0, todo: 0, completed: 0 },
+    );
+    const completedTasks = tasks.filter((task) => getTaskLane(task) === "completed");
+    const pendingTasks = tasks.filter((task) => getTaskLane(task) !== "completed");
+    const stageState =
+      laneCounts.backlog > 0
+        ? "backlog"
+        : laneCounts.in_progress > 0
+          ? "in-progress"
+          : laneCounts.todo > 0
+            ? "todo"
+            : tasks.length > 0
+              ? "completed"
+              : "todo";
 
     nodes.push({
       id: stageId,
@@ -215,20 +240,13 @@ function buildGraph(workflow, users = []) {
           `${tasks.length} linked task${tasks.length === 1 ? "" : "s"}`,
         label: `Stage ${stageIndex + 1}`,
         accent: stageAccent,
-        badge: `${completedTasks.length}/${tasks.length || 0} done`,
+        badge: `${laneCounts.backlog}/${laneCounts.in_progress}/${laneCounts.todo}/${laneCounts.completed}`,
         taskCount: tasks.length,
-        status:
-          tasks.length === 0
-            ? "pending"
-            : pendingTasks.length === 0
-              ? "done"
-              : completedTasks.length > 0
-                ? "in-progress"
-                : "pending",
+        status: stageState,
         progress:
           tasks.length === 0
             ? "No tasks yet"
-            : `${completedTasks.length} completed, ${pendingTasks.length} pending`,
+            : `Backlog ${laneCounts.backlog} · In Progress ${laneCounts.in_progress} · To Do ${laneCounts.todo} · Completed ${laneCounts.completed}`,
       },
     });
 
@@ -263,8 +281,8 @@ function buildGraph(workflow, users = []) {
           assignedTo: task.assigned_to ?? null,
           priority: task.priority || "normal",
           dueDate: task.due_date || null,
-          status: task.status === "completed" ? "done" : "pending",
-          progress: task.status === "completed" ? "Completed" : "Pending work",
+          status: getTaskLane(task),
+          progress: getTaskLaneLabel(getTaskLane(task)),
           note: task.notes || "",
         },
       });
