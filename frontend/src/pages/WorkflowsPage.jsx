@@ -336,6 +336,14 @@ export function WorkflowsPage() {
                   >
                     {selectedNode.data?.label || "node"}
                   </Badge>
+                  {selectedNode.data?.status ? (
+                    <Badge
+                      variant="secondary"
+                      className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide"
+                    >
+                      {selectedNode.data.status}
+                    </Badge>
+                  ) : null}
                   <span className="text-sm font-semibold text-zinc-950">
                     {selectedNode.data?.title}
                   </span>
@@ -343,6 +351,11 @@ export function WorkflowsPage() {
                 <p className="mt-2 text-sm text-zinc-600">
                   {selectedNode.data?.details || selectedNode.data?.description}
                 </p>
+                {selectedNode.data?.progress ? (
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                    {selectedNode.data.progress}
+                  </p>
+                ) : null}
                 <div className="mt-3 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2">
                   <div className="flex items-center justify-between gap-3">
                     <span>Type</span>
@@ -390,6 +403,14 @@ export function WorkflowsPage() {
                           {selectedNode.data?.dueDate || "—"}
                         </span>
                       </div>
+                      {selectedNode.data?.note ? (
+                        <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-relaxed text-zinc-600">
+                          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                            Note
+                          </span>
+                          {selectedNode.data.note}
+                        </div>
+                      ) : null}
                     </>
                   ) : (
                     <div className="flex items-center justify-between gap-3 sm:col-span-2">

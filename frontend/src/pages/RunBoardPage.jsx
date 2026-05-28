@@ -26,6 +26,7 @@ export function RunBoardPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completingTaskId, setCompletingTaskId] = useState(null);
+  const [completionNotes, setCompletionNotes] = useState({});
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -59,8 +60,16 @@ export function RunBoardPage() {
       if (!boardRes.ok) throw new Error("Failed to load workflow run board");
       if (!usersRes.ok) throw new Error("Failed to load user directories");
 
-      setBoard(await boardRes.json());
+      const boardPayload = await boardRes.json();
+      setBoard(boardPayload);
       setUsers(await usersRes.json());
+      const nextNotes = {};
+      (boardPayload.stages || []).forEach((stage) => {
+        (stage.tasks || []).forEach((task) => {
+          nextNotes[task.task_id || task.id] = task.notes || "";
+        });
+      });
+      setCompletionNotes(nextNotes);
     } catch (err) {
       console.error(err);
     } finally {
@@ -80,6 +89,7 @@ export function RunBoardPage() {
         {
           method: "POST",
           headers,
+          body: JSON.stringify({ notes: completionNotes[taskId] || null }),
         },
       );
       if (!response.ok) {
@@ -283,6 +293,31 @@ export function RunBoardPage() {
                             <p className="text-[10px] text-slate-400 leading-normal line-clamp-2">
                               {task.description || "No description provided."}
                             </p>
+                            {task.notes ? (
+                              <p className="rounded-xl border border-white/5 bg-white/5 px-2 py-1 text-[10px] text-slate-300">
+                                <span className="font-semibold text-slate-100">
+                                  Note:
+                                </span>{" "}
+                                {task.notes}
+                              </p>
+                            ) : null}
+                            {task.status !== "completed" ? (
+                              <textarea
+                                value={
+                                  completionNotes[task.task_id || task.id] || ""
+                                }
+                                onChange={(event) =>
+                                  setCompletionNotes((current) => ({
+                                    ...current,
+                                    [task.task_id || task.id]:
+                                      event.target.value,
+                                  }))
+                                }
+                                placeholder="Add a completion note"
+                                rows={3}
+                                className="w-full rounded-2xl border border-white/10 bg-slate-950/60 px-3 py-2 text-[11px] text-slate-100 outline-none transition placeholder:text-slate-500 focus:border-sky-500/40 focus:bg-slate-950"
+                              />
+                            ) : null}
                           </div>
                           <Badge
                             variant={

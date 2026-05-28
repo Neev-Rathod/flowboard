@@ -273,14 +273,6 @@ function CreatePersonDialog({ open, onOpenChange, onCreate, saving }) {
   });
   const [error, setError] = useState("");
 
-  const handleOpenChange = (nextOpen) => {
-    if (!nextOpen) {
-      setDraft({ ...initialDraft });
-      setError("");
-    }
-    onOpenChange(nextOpen);
-  };
-
   const handleSubmit = async (event) => {
     event.preventDefault();
     setError("");
@@ -294,7 +286,9 @@ function CreatePersonDialog({ open, onOpenChange, onCreate, saving }) {
         job_title: draft.job_title.trim() || "Employee",
         manager_id: null,
       });
-      handleOpenChange(false);
+      setDraft({ ...initialDraft });
+      setError("");
+      onOpenChange(false);
     } catch (submitError) {
       setError(submitError.message || "Unable to create person");
     }
@@ -305,7 +299,16 @@ function CreatePersonDialog({ open, onOpenChange, onCreate, saving }) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={handleOpenChange}>
+    <Dialog
+      open={open}
+      onOpenChange={(nextOpen) => {
+        if (!nextOpen) {
+          setDraft({ ...initialDraft });
+          setError("");
+        }
+        onOpenChange(nextOpen);
+      }}
+    >
       <DialogContent className="max-w-xl rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl">
         <form onSubmit={handleSubmit} className="flex flex-col">
           <div className="border-b border-zinc-200 px-6 py-5">

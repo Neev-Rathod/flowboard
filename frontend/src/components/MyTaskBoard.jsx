@@ -9,6 +9,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [completingTaskId, setCompletingTaskId] = useState(null);
+  const [completionNotes, setCompletionNotes] = useState({});
   const [error, setError] = useState("");
 
   const headers = {
@@ -26,6 +27,13 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
       }
       const data = await response.json();
       setTasks(data);
+      setCompletionNotes((current) => {
+        const next = { ...current };
+        data.forEach((task) => {
+          next[task.task_id] = task.notes || next[task.task_id] || "";
+        });
+        return next;
+      });
     } catch (err) {
       setError(err.message);
     } finally {
@@ -50,6 +58,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
         {
           method: "POST",
           headers,
+          body: JSON.stringify({ notes: completionNotes[taskId] || null }),
         },
       );
       if (!response.ok) {
@@ -154,6 +163,26 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                       {task.description}
                     </p>
                   )}
+                  {task.notes ? (
+                    <p className="max-w-xl rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs leading-relaxed text-zinc-600">
+                      <span className="font-semibold uppercase tracking-wide text-zinc-400">
+                        Note
+                      </span>{" "}
+                      {task.notes}
+                    </p>
+                  ) : null}
+                  <textarea
+                    value={completionNotes[task.task_id] || ""}
+                    onChange={(event) =>
+                      setCompletionNotes((current) => ({
+                        ...current,
+                        [task.task_id]: event.target.value,
+                      }))
+                    }
+                    placeholder="Add a completion note or relevant update"
+                    rows={3}
+                    className="max-w-xl w-full rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none transition focus:border-zinc-400 focus:bg-white"
+                  />
                 </div>
 
                 <div className="flex items-center gap-3 self-end md:self-center">

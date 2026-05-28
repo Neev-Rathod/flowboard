@@ -34,6 +34,7 @@ def ensure_compatibility_columns() -> None:
         ],
         "tasks": [
             ("completed_at", "TIMESTAMP"),
+            ("notes", "TEXT"),
         ],
     }
 

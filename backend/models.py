@@ -79,5 +79,6 @@ class Task(Base):
     assigned_to = Column(Integer, ForeignKey("users.id"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     completed_at = Column(DateTime)
+    notes = Column(Text)
 
     stage = relationship("WorkflowStage", back_populates="tasks")

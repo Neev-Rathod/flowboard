@@ -46,6 +46,7 @@ class TaskBase(BaseModel):
     status: Optional[str] = "todo"
     due_date: Optional[datetime] = None
     assigned_to: Optional[int] = None
+    notes: Optional[str] = None
 
 
 class TaskCreate(TaskBase):
@@ -113,6 +114,7 @@ class WorkflowBoardTaskOut(BaseModel):
     stage_title: str
     locked: bool
     completed_at: Optional[datetime] = None
+    notes: Optional[str] = None
 
 
 class WorkflowBoardStageOut(BaseModel):
@@ -123,6 +125,10 @@ class WorkflowBoardStageOut(BaseModel):
     locked: bool
     completed: bool
     tasks: List[WorkflowBoardTaskOut] = []
+
+
+class TaskCompletionPayload(BaseModel):
+    notes: Optional[str] = None
 
 
 class WorkflowBoardOut(BaseModel):

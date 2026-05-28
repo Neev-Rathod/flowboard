@@ -29,6 +29,14 @@ const priorityColors = {
 function WorkflowNode({ data, selected, onAddTask }) {
   const accent = data.accent || "#18181b";
   const canAddTask = data.kind === "stage" && typeof onAddTask === "function";
+  const statusTone =
+    data.status === "done"
+      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+      : data.status === "in-progress"
+        ? "bg-sky-500/10 text-sky-700 border-sky-500/20"
+        : data.status === "pending"
+          ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
+          : "bg-zinc-100 text-zinc-700 border-zinc-200";
 
   return (
     <div
@@ -53,12 +61,39 @@ function WorkflowNode({ data, selected, onAddTask }) {
         </div>
       </div>
       <div className="space-y-1.5 px-3 py-3">
+        <div className="flex flex-wrap items-center gap-2">
+          {data.status ? (
+            <span
+              className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${statusTone}`}
+            >
+              {data.status}
+            </span>
+          ) : null}
+          {data.taskCount !== undefined ? (
+            <span className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
+              {data.taskCount} task{data.taskCount === 1 ? "" : "s"}
+            </span>
+          ) : null}
+        </div>
         <p className="line-clamp-2 text-sm font-semibold text-zinc-950">
           {data.title}
         </p>
         <p className="line-clamp-3 text-[11px] leading-relaxed text-zinc-500">
           {data.description}
         </p>
+        {data.progress ? (
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+            {data.progress}
+          </p>
+        ) : null}
+        {data.note ? (
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-[11px] leading-relaxed text-zinc-600">
+            <span className="mr-1 font-semibold uppercase tracking-wide text-zinc-400">
+              Note
+            </span>
+            <span className="line-clamp-3">{data.note}</span>
+          </div>
+        ) : null}
         {data.meta ? (
           <p className="text-[10px] uppercase tracking-[0.2em] text-zinc-400">
             {data.meta}
@@ -163,6 +198,8 @@ function buildGraph(workflow, users = []) {
     const stageAccent =
       stage.color || stageColors[stageIndex % stageColors.length];
     const tasks = stage.tasks || [];
+    const completedTasks = tasks.filter((task) => task.status === "completed");
+    const pendingTasks = tasks.filter((task) => task.status !== "completed");
 
     nodes.push({
       id: stageId,
@@ -178,8 +215,20 @@ function buildGraph(workflow, users = []) {
           `${tasks.length} linked task${tasks.length === 1 ? "" : "s"}`,
         label: `Stage ${stageIndex + 1}`,
         accent: stageAccent,
-        badge: `${tasks.length} task${tasks.length === 1 ? "" : "s"}`,
+        badge: `${completedTasks.length}/${tasks.length || 0} done`,
         taskCount: tasks.length,
+        status:
+          tasks.length === 0
+            ? "pending"
+            : pendingTasks.length === 0
+              ? "done"
+              : completedTasks.length > 0
+                ? "in-progress"
+                : "pending",
+        progress:
+          tasks.length === 0
+            ? "No tasks yet"
+            : `${completedTasks.length} completed, ${pendingTasks.length} pending`,
       },
     });
 
@@ -214,6 +263,9 @@ function buildGraph(workflow, users = []) {
           assignedTo: task.assigned_to ?? null,
           priority: task.priority || "normal",
           dueDate: task.due_date || null,
+          status: task.status === "completed" ? "done" : "pending",
+          progress: task.status === "completed" ? "Completed" : "Pending work",
+          note: task.notes || "",
         },
       });
 

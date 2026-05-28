@@ -9,6 +9,7 @@ from routers.organization import is_descendant
 from schemas import (
     StageCreate,
     StageOut,
+    TaskCompletionPayload,
     TaskCreate,
     TaskOut,
     WorkflowBoardOut,
@@ -52,6 +53,7 @@ def build_workflow_board(db: Session, workflow: Workflow) -> dict:
                     "stage_title": stage.title,
                     "locked": locked,
                     "completed_at": task.completed_at,
+                    "notes": task.notes,
                 }
             )
             if task.completed_at and (latest_completed_at is None or task.completed_at > latest_completed_at):
@@ -229,6 +231,7 @@ def duplicate_workflow(workflow_id: int, db: Session = Depends(get_db), current_
                 status=t.status,
                 due_date=t.due_date,
                 assigned_to=t.assigned_to,
+                notes=t.notes,
             )
             db.add(nt)
         db.commit()
@@ -297,6 +300,7 @@ def import_workflow(payload: dict, db: Session = Depends(get_db), current_user: 
                 description=t.get("description"),
                 priority=t.get("priority"),
                 status=t.get("status"),
+                notes=t.get("notes"),
             )
             db.add(tt)
         db.commit()
@@ -357,6 +361,7 @@ def create_task(stage_id: int, payload: TaskCreate, db: Session = Depends(get_db
         status=payload.status,
         due_date=payload.due_date,
         assigned_to=payload.assigned_to,
+        notes=payload.notes,
     )
     db.add(task)
     db.commit()
@@ -416,6 +421,7 @@ def update_task(task_id: int, payload: TaskCreate, db: Session = Depends(get_db)
     task.status = payload.status
     task.due_date = payload.due_date
     task.assigned_to = payload.assigned_to
+    task.notes = payload.notes
     db.add(task)
     db.commit()
     db.refresh(task)
@@ -451,7 +457,13 @@ def get_workflow_board(workflow_id: int, db: Session = Depends(get_db), current_
 
 
 @router.post("/{workflow_id}/tasks/{task_id}/complete", response_model=dict)
-def complete_task(workflow_id: int, task_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+def complete_task(
+    workflow_id: int,
+    task_id: int,
+    payload: TaskCompletionPayload,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
     workflow = (
         db.query(Workflow)
         .filter(Workflow.id == workflow_id, Workflow.company_id == current_user.company_id)
@@ -481,11 +493,18 @@ def complete_task(workflow_id: int, task_id: int, db: Session = Depends(get_db),
 
     task.status = "completed"
     task.completed_at = datetime.utcnow()
+    if payload.notes is not None:
+        task.notes = payload.notes.strip() or None
     db.add(task)
     db.commit()
     db.refresh(task)
 
-    return {"id": task.id, "status": task.status, "completed_at": task.completed_at}
+    return {
+        "id": task.id,
+        "status": task.status,
+        "completed_at": task.completed_at,
+        "notes": task.notes,
+    }
 
 
 @router.get("/dashboard/summary", response_model=dict)
