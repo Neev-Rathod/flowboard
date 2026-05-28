@@ -105,3 +105,119 @@ textarea {
 .react-flow__controls-button:hover {
   background-color: #18181b !important;
 }
+
+/* Premium Animations & Effects */
+
+@utility animate-marquee {
+  animation: marquee 25s linear infinite;
+}
+
+@utility animate-image-glow {
+  animation: image-glow 8s infinite ease-in-out;
+}
+
+@utility animate-float {
+  animation: float 6s ease-in-out infinite;
+}
+
+@utility animate-border-beam {
+  animation: border-beam 6s linear infinite;
+}
+
+@utility animate-spin-slow {
+  animation: spin-slow 20s linear infinite;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+@keyframes image-glow {
+  0%, 100% {
+    opacity: 0.45;
+    filter: blur(80px);
+  }
+  50% {
+    opacity: 0.75;
+    filter: blur(100px);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+@keyframes border-beam {
+  0% {
+    background-position: 0% 50%;
+  }
+  50% {
+    background-position: 100% 50%;
+  }
+  100% {
+    background-position: 0% 50%;
+  }
+}
+
+@keyframes spin-slow {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Simulated Drag and Node Promotion Keyframes */
+@keyframes simulate-drag {
+  0% {
+    transform: translate(0, 0) scale(1);
+  }
+  20% {
+    transform: translate(10px, -10px) scale(1.05);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  }
+  45% {
+    transform: translate(110px, 0px) scale(1.05);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.4);
+  }
+  60% {
+    transform: translate(220px, 5px) scale(1);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+  85%, 100% {
+    transform: translate(220px, 5px) scale(1);
+    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  }
+}
+
+.simulate-drag-active {
+  animation: simulate-drag 4s ease-in-out infinite;
+}
+
+@keyframes simulate-node {
+  0%, 100% {
+    transform: scale(1);
+    border-color: #27272a;
+  }
+  30%, 70% {
+    transform: scale(1.08);
+    border-color: #a855f7;
+    box-shadow: 0 0 15px rgba(168, 85, 247, 0.5);
+  }
+}
+
+.simulate-node-pulse {
+  animation: simulate-node 3s ease-in-out infinite;
+}
+
