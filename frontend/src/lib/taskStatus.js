@@ -1,4 +1,5 @@
-const normalizeStatus = (value) => (value || "todo").toString().trim().toLowerCase().replace(/\s+/g, "_");
+const normalizeStatus = (value) =>
+  (value || "todo").toString().trim().toLowerCase().replace(/\s+/g, "_");
 
 export function getTaskLane(task, now = Date.now()) {
   const status = normalizeStatus(task?.status);
@@ -14,7 +15,11 @@ export function getTaskLane(task, now = Date.now()) {
     }
   }
 
-  if (status === "in_progress" || status === "inprogress" || status === "doing") {
+  if (
+    status === "in_progress" ||
+    status === "inprogress" ||
+    status === "doing"
+  ) {
     return "in_progress";
   }
 

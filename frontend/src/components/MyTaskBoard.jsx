@@ -1,5 +1,11 @@
 import { useEffect, useMemo, useState } from "react";
-import { CheckCircle2, ChevronRight, GripVertical, Inbox, Loader2 } from "lucide-react";
+import {
+  CheckCircle2,
+  ChevronRight,
+  GripVertical,
+  Inbox,
+  Loader2,
+} from "lucide-react";
 
 import { getTaskLane, getTaskLaneLabel } from "../lib/taskStatus";
 import { Badge } from "./ui/badge";
@@ -169,9 +175,12 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-950">All caught up!</p>
+              <p className="text-sm font-medium text-zinc-950">
+                All caught up!
+              </p>
               <p className="mt-1 max-w-xs text-xs text-zinc-500">
-                No active tasks are assigned to you in the current stage of any running workflows.
+                No active tasks are assigned to you in the current stage of any
+                running workflows.
               </p>
             </div>
           </CardContent>
@@ -213,7 +222,9 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                     <h3 className="text-sm font-semibold tracking-tight text-zinc-950">
                       {column.title}
                     </h3>
-                    <p className="text-xs text-zinc-500">{column.description}</p>
+                    <p className="text-xs text-zinc-500">
+                      {column.description}
+                    </p>
                   </div>
                   <Badge
                     variant="outline"
@@ -226,7 +237,8 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                 <KanbanColumnContent value={column.id}>
                   {(groupedColumns[column.id] || []).map((task) => {
                     const lane = getTaskLane(task);
-                    const canDrag = task.status !== "completed" && lane !== "backlog";
+                    const canDrag =
+                      task.status !== "completed" && lane !== "backlog";
 
                     return (
                       <KanbanItem
@@ -269,7 +281,9 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                             </div>
 
                             <Badge
-                              variant={lane === "completed" ? "success" : "outline"}
+                              variant={
+                                lane === "completed" ? "success" : "outline"
+                              }
                               className="rounded-full px-2 py-0.5 text-[10px] uppercase tracking-wide"
                             >
                               {getTaskLaneLabel(lane)}
@@ -320,20 +334,26 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                             <Button
                               type="button"
                               size="sm"
-                              variant={lane === "completed" ? "secondary" : "default"}
+                              variant={
+                                lane === "completed" ? "secondary" : "default"
+                              }
                               className="h-9 rounded-xl px-4 font-semibold transition-all duration-200"
                               disabled={
                                 task.status === "completed" ||
                                 completingTaskId === task.task_id
                               }
-                              onClick={() => handleComplete(task.workflow_id, task.task_id)}
+                              onClick={() =>
+                                handleComplete(task.workflow_id, task.task_id)
+                              }
                             >
                               {completingTaskId === task.task_id ? (
                                 <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
                               ) : (
                                 <CheckCircle2 className="mr-1.5 h-4 w-4" />
                               )}
-                              {task.status === "completed" ? "Done" : "Complete"}
+                              {task.status === "completed"
+                                ? "Done"
+                                : "Complete"}
                             </Button>
                           </div>
                         </div>

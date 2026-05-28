@@ -42,9 +42,9 @@ function WorkflowNode({ data, selected, onAddTask }) {
             ? "bg-zinc-100 text-zinc-700 border-zinc-200"
             : data.status === "done"
               ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
-        : data.status === "pending"
-          ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
-          : "bg-zinc-100 text-zinc-700 border-zinc-200";
+              : data.status === "pending"
+                ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
+                : "bg-zinc-100 text-zinc-700 border-zinc-200";
 
   return (
     <div
@@ -213,8 +213,12 @@ function buildGraph(workflow, users = []) {
       },
       { backlog: 0, in_progress: 0, todo: 0, completed: 0 },
     );
-    const completedTasks = tasks.filter((task) => getTaskLane(task) === "completed");
-    const pendingTasks = tasks.filter((task) => getTaskLane(task) !== "completed");
+    const completedTasks = tasks.filter(
+      (task) => getTaskLane(task) === "completed",
+    );
+    const pendingTasks = tasks.filter(
+      (task) => getTaskLane(task) !== "completed",
+    );
     const stageState =
       laneCounts.backlog > 0
         ? "backlog"
