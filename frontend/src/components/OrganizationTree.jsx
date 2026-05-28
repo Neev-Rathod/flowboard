@@ -8,7 +8,7 @@ import {
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
-import { Plus, ShieldAlert } from "lucide-react";
+import { Plus, ShieldAlert, Trash2 } from "lucide-react";
 
 import { Badge } from "./ui/badge";
 import { Button } from "./ui/button";
@@ -45,8 +45,6 @@ const roleTone = {
 };
 
 function NodeCard({ data, selected }) {
-  const attached = data.kind === "attached";
-
   return (
     <div
       className={[
@@ -54,7 +52,6 @@ function NodeCard({ data, selected }) {
         selected
           ? "border-zinc-900 ring-2 ring-zinc-900/10"
           : "border-zinc-200",
-        attached ? "" : "border-dashed",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-3">
@@ -76,30 +73,13 @@ function NodeCard({ data, selected }) {
       </div>
 
       <div className="space-y-2 px-4 py-3">
-        <div className="flex flex-wrap items-center gap-2">
-          <Badge
-            variant={attached ? "secondary" : "outline"}
-            className={[
-              "rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide",
-              attached
-                ? "bg-sky-50 text-sky-700 border-sky-200"
-                : "bg-zinc-50 text-zinc-600 border-zinc-200",
-            ].join(" ")}
-          >
-            {attached ? "Attached" : "Unattached"}
-          </Badge>
-          {data.managerName ? (
-            <span className="text-[11px] text-zinc-500">
-              Reports to {data.managerName}
-            </span>
-          ) : (
-            <span className="text-[11px] text-zinc-500">
-              {attached ? "Top-level person" : "Waiting to be attached"}
-            </span>
-          )}
-        </div>
         <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-500">
           {data.email}
+        </p>
+        <p className="text-[11px] text-zinc-500">
+          {data.managerName
+            ? `Reports to ${data.managerName}`
+            : "No manager assigned"}
         </p>
       </div>
 
@@ -422,10 +402,155 @@ function CreatePersonDialog({ open, onOpenChange, onCreate, saving }) {
   );
 }
 
+function EmployeeDetailsPanel({ user, onClose, onSave, onDelete, saving }) {
+  const [draft, setDraft] = useState(() => ({
+    username: user.username || "",
+    email: user.email || "",
+    role: user.role || "employee",
+    job_title: user.job_title || "Employee",
+  }));
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+    await onSave?.({
+      username: draft.username.trim(),
+      email: draft.email.trim(),
+      role: draft.role.trim() || "employee",
+      job_title: draft.job_title.trim() || "Employee",
+    });
+  };
+
+  return (
+    <div className="absolute bottom-4 right-4 z-20 w-[360px] rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur">
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-zinc-950">
+            {user.username}
+          </p>
+          <p className="text-xs text-zinc-500">{user.job_title}</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" variant="outline" size="sm" onClick={onClose}>
+            Close
+          </Button>
+        </div>
+      </div>
+
+      <form className="mt-4 space-y-3" onSubmit={handleSubmit}>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Username
+            </label>
+            <Input
+              value={draft.username}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  username: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Email
+            </label>
+            <Input
+              type="email"
+              value={draft.email}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  email: event.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Role
+            </label>
+            <Input
+              value={draft.role}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  role: event.target.value,
+                }))
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
+            <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              Job title
+            </label>
+            <Input
+              value={draft.job_title}
+              onChange={(event) =>
+                setDraft((current) => ({
+                  ...current,
+                  job_title: event.target.value,
+                }))
+              }
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-2 text-xs text-zinc-600 sm:grid-cols-2">
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              Manager
+            </span>
+            <span>{user.managerName || "No manager assigned"}</span>
+          </div>
+          <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-3">
+            <span className="block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+              Company ID
+            </span>
+            <span>{user.company_id ?? "—"}</span>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-between gap-2 pt-1">
+          <Button
+            type="button"
+            variant="destructive"
+            onClick={() => onDelete?.(user)}
+            disabled={saving}
+          >
+            <Trash2 className="h-4 w-4" />
+            Delete employee
+          </Button>
+
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={saving}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Saving..." : "Save changes"}
+            </Button>
+          </div>
+        </div>
+      </form>
+    </div>
+  );
+}
+
 export function OrganizationTree({
   users = [],
   loading = false,
   onCreateUser,
+  onUpdateUser,
+  onDeleteUser,
   onAttachUser,
   onRefresh,
 }) {
@@ -437,6 +562,7 @@ export function OrganizationTree({
   const [saving, setSaving] = useState(false);
   const [selectedNodeId, setSelectedNodeId] = useState(null);
   const [actionError, setActionError] = useState("");
+  const [detailSaving, setDetailSaving] = useState(false);
 
   useEffect(() => {
     setNodes((currentNodes) => {
@@ -467,6 +593,14 @@ export function OrganizationTree({
   const selectedNode = useMemo(
     () => nodes.find((node) => node.id === selectedNodeId) || null,
     [nodes, selectedNodeId],
+  );
+
+  const selectedUser = useMemo(
+    () =>
+      users.find(
+        (user) => String(user.id) === String(selectedNode?.data?.userId),
+      ) || null,
+    [selectedNode, users],
   );
 
   const nodeTypes = useMemo(
@@ -518,22 +652,55 @@ export function OrganizationTree({
     [nodes, onAttachUser, onRefresh],
   );
 
+  const handleUpdateUser = useCallback(
+    async (payload) => {
+      if (!selectedUser) return;
+      setDetailSaving(true);
+      setActionError("");
+      try {
+        await onUpdateUser?.(selectedUser.id, payload);
+        await onRefresh?.();
+      } catch (error) {
+        setActionError(error.message || "Unable to update employee");
+      } finally {
+        setDetailSaving(false);
+      }
+    },
+    [onRefresh, onUpdateUser, selectedUser],
+  );
+
+  const handleDeleteUser = useCallback(
+    async (user) => {
+      if (!user) return;
+      const confirmed = window.confirm(
+        `Delete ${user.username}? Reports will be detached and assigned tasks will be unassigned.`,
+      );
+      if (!confirmed) return;
+
+      setDetailSaving(true);
+      setActionError("");
+      try {
+        await onDeleteUser?.(user.id);
+        setSelectedNodeId(null);
+        await onRefresh?.();
+      } catch (error) {
+        setActionError(error.message || "Unable to delete employee");
+      } finally {
+        setDetailSaving(false);
+      }
+    },
+    [onDeleteUser, onRefresh],
+  );
+
   const loadingState = loading && !users.length;
 
   return (
     <div className="relative h-[760px] w-full overflow-hidden rounded-2xl border border-zinc-200 bg-[radial-gradient(circle_at_1px_1px,_rgba(24,24,27,0.10)_1px,_transparent_0)] bg-[size:18px_18px]">
       <div className="absolute left-4 top-4 z-20 max-w-md rounded-full border border-zinc-200 bg-white/90 px-3 py-1.5 text-xs text-zinc-600 shadow-sm backdrop-blur">
-        Drag the handles to connect people under a manager. New people start
-        unattached in the lower canvas band.
+        Drag the handles to connect people under a manager.
       </div>
 
       <div className="absolute right-4 top-4 z-20 flex items-center gap-2">
-        <Badge
-          variant="outline"
-          className="rounded-full border-zinc-200 bg-white/90 px-3 py-1 text-xs text-zinc-600 shadow-sm backdrop-blur"
-        >
-          {graph.unattachedCount} unattached
-        </Badge>
         <Button
           type="button"
           className="rounded-full shadow-sm"
@@ -605,32 +772,19 @@ export function OrganizationTree({
       </div>
 
       {selectedNode ? (
-        <div className="absolute bottom-4 right-4 z-20 w-[320px] rounded-2xl border border-zinc-200 bg-white/95 p-4 shadow-lg backdrop-blur">
-          <div className="flex items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="truncate text-sm font-semibold text-zinc-950">
-                {selectedNode.data.username}
-              </p>
-              <p className="text-xs text-zinc-500">
-                {selectedNode.data.jobTitle}
-              </p>
-            </div>
-            <Badge
-              variant={
-                selectedNode.data.kind === "attached" ? "secondary" : "outline"
-              }
-              className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide"
-            >
-              {selectedNode.data.kind === "attached"
-                ? "Attached"
-                : "Unattached"}
-            </Badge>
-          </div>
-          <p className="mt-3 text-xs leading-relaxed text-zinc-500">
-            Connect a manager’s bottom handle to this person’s top handle to
-            attach them to the reporting hierarchy.
-          </p>
-        </div>
+        selectedUser ? (
+          <EmployeeDetailsPanel
+            key={`${selectedUser.id}-${selectedUser.username}-${selectedUser.email}-${selectedUser.job_title}-${selectedUser.role}`}
+            user={{
+              ...selectedUser,
+              managerName: selectedNode.data.managerName,
+            }}
+            onClose={() => setSelectedNodeId(null)}
+            onSave={handleUpdateUser}
+            onDelete={handleDeleteUser}
+            saving={detailSaving}
+          />
+        ) : null
       ) : null}
 
       <CreatePersonDialog

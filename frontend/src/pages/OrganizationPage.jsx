@@ -30,7 +30,7 @@ export function OrganizationPage() {
     }
     metaDesc.setAttribute(
       "content",
-      "View the reporting hierarchy as a canvas, add new people as unattached nodes, and connect them to the right manager.",
+      "View the reporting hierarchy as a canvas, add new people, and connect them to the right manager.",
     );
   }, []);
 
@@ -66,6 +66,35 @@ export function OrganizationPage() {
     }
 
     return result;
+  };
+
+  const updateUser = async (userId, payload) => {
+    const response = await fetch(`${apiBase}/organization/users/${userId}`, {
+      method: "PATCH",
+      headers,
+      body: JSON.stringify(payload),
+    });
+
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.detail || "Unable to update user");
+    }
+
+    return result;
+  };
+
+  const deleteUser = async (userId) => {
+    const response = await fetch(`${apiBase}/organization/users/${userId}`, {
+      method: "DELETE",
+      headers,
+    });
+
+    if (!response.ok && response.status !== 204) {
+      const result = await response.json();
+      throw new Error(result.detail || "Unable to delete user");
+    }
+
+    return null;
   };
 
   const attachUser = async (userId, managerId) => {
@@ -109,7 +138,7 @@ export function OrganizationPage() {
             Reporting Hierarchy
           </CardTitle>
           <CardDescription className="max-w-3xl text-sm text-zinc-600">
-            Add people as unattached nodes, then connect the bottom handle of a
+            Add people to the canvas, then connect the bottom handle of a
             manager to the top handle of a person to place them in the tree.
           </CardDescription>
         </CardHeader>
@@ -128,6 +157,8 @@ export function OrganizationPage() {
               users={users}
               loading={loading}
               onCreateUser={createUser}
+              onUpdateUser={updateUser}
+              onDeleteUser={deleteUser}
               onAttachUser={attachUser}
               onRefresh={loadOrganization}
             />
@@ -144,7 +175,7 @@ export function OrganizationPage() {
           </div>
           <div className="flex items-center gap-2">
             <Plus className="h-4 w-4 text-zinc-500" />
-            Use Add person inside the canvas to place a new unattached node.
+            Use Add person inside the canvas to place a new employee.
           </div>
         </CardContent>
       </Card>

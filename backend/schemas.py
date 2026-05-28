@@ -153,6 +153,8 @@ class OrgUserCreate(BaseModel):
 
 
 class OrgUserUpdate(BaseModel):
+    username: Optional[str] = None
+    email: Optional[str] = None
     role: Optional[str] = None
     job_title: Optional[str] = None
     manager_id: Optional[int] = None

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from dependencies import get_db, get_current_user
-from models import User
+from models import Task, User
 from schemas import OrgUserCreate, OrgUserOut, OrgUserUpdate
 from security import get_password_hash
 
@@ -89,6 +89,26 @@ def update_org_user(user_id: int, payload: OrgUserUpdate, db: Session = Depends(
     if user is None:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
 
+    if payload.username is not None:
+        duplicate_username = (
+            db.query(User)
+            .filter(User.username == payload.username, User.id != user.id)
+            .first()
+        )
+        if duplicate_username is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already exists")
+        user.username = payload.username
+
+    if payload.email is not None:
+        duplicate_email = (
+            db.query(User)
+            .filter(User.email == payload.email, User.id != user.id)
+            .first()
+        )
+        if duplicate_email is not None:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Email already exists")
+        user.email = payload.email
+
     if payload.manager_id is not None and payload.manager_id != user.manager_id:
         if payload.manager_id == user.id:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User cannot manage themselves")
@@ -112,6 +132,31 @@ def update_org_user(user_id: int, payload: OrgUserUpdate, db: Session = Depends(
     db.commit()
     db.refresh(user)
     return user
+
+
+@router.delete("/users/{user_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_org_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in {"admin", "hr"}:
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Only admin or HR can delete users")
+
+    user = db.query(User).filter(User.id == user_id).first()
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+
+    reports = db.query(User).filter(User.manager_id == user.id).all()
+    for report in reports:
+        report.manager_id = None
+        report.is_attached = False
+        db.add(report)
+
+    tasks = db.query(Task).filter(Task.assigned_to == user.id).all()
+    for task in tasks:
+        task.assigned_to = None
+        db.add(task)
+
+    db.delete(user)
+    db.commit()
+    return None
 
 
 @router.post("/assignments/workflows/{workflow_id}/run")
