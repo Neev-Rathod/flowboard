@@ -126,19 +126,23 @@ def get_assigned_tasks(db: Session = Depends(get_db), current_user: User = Depen
     for workflow in workflows:
         board = build_workflow_board(db, workflow)
         for stage in board["stages"]:
-            if not stage["locked"]:
-                for task in stage["tasks"]:
-                    if task["assigned_to"] == current_user.id and task["status"] == "todo":
-                        assigned_tasks.append({
-                            "task_id": task["task_id"],
-                            "workflow_id": board["workflow_id"],
-                            "workflow_title": board["workflow_title"],
-                            "stage_title": stage["title"],
-                            "title": task["title"],
-                            "description": task["description"],
-                            "priority": task["priority"],
-                            "status": task["status"],
-                        })
+            if stage["locked"]:
+                continue
+
+            for task in stage["tasks"]:
+                if task["assigned_to"] == current_user.id:
+                    assigned_tasks.append({
+                        "task_id": task["task_id"],
+                        "workflow_id": board["workflow_id"],
+                        "workflow_title": board["workflow_title"],
+                        "stage_title": stage["title"],
+                        "title": task["title"],
+                        "description": task["description"],
+                        "priority": task["priority"],
+                        "status": task["status"],
+                        "notes": task.get("notes"),
+                        "completed_at": task.get("completed_at"),
+                    })
     return assigned_tasks
 
 

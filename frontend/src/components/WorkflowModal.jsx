@@ -555,6 +555,23 @@ function WorkflowModalEditor({
               </DialogDescription>
             </DialogHeader>
 
+            <div className="min-w-[18rem] max-w-md space-y-2">
+              <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+                Workflow title
+              </label>
+              <Input
+                value={draft.title}
+                onChange={(event) =>
+                  setDraft((current) => ({
+                    ...current,
+                    title: event.target.value,
+                  }))
+                }
+                placeholder="Name this workflow"
+                className="h-11 rounded-2xl border-zinc-200 bg-zinc-50 text-sm text-zinc-950"
+              />
+            </div>
+
             <div className="flex items-center gap-2">
               <Button type="button" variant="outline" onClick={addStage}>
                 <Plus className="h-4 w-4" />
