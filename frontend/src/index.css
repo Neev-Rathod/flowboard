@@ -2,25 +2,25 @@
 @import "@xyflow/react/dist/style.css";
 
 :root {
-  --background: #ffffff;
-  --foreground: #09090b;
-  --card: #ffffff;
-  --card-foreground: #09090b;
-  --popover: #ffffff;
-  --popover-foreground: #09090b;
-  --primary: #09090b;
+  --background: #050505;
+  --foreground: #f4f4f5;
+  --card: #09090b;
+  --card-foreground: #f4f4f5;
+  --popover: #09090b;
+  --popover-foreground: #f4f4f5;
+  --primary: #a855f7;
   --primary-foreground: #fafafa;
-  --secondary: #f4f4f5;
-  --secondary-foreground: #09090b;
-  --muted: #f4f4f5;
-  --muted-foreground: #71717a;
-  --accent: #f4f4f5;
-  --accent-foreground: #09090b;
-  --destructive: #ef4444;
+  --secondary: #18181b;
+  --secondary-foreground: #f4f4f5;
+  --muted: #18181b;
+  --muted-foreground: #a1a1aa;
+  --accent: #18181b;
+  --accent-foreground: #f4f4f5;
+  --destructive: #f43f5e;
   --destructive-foreground: #fafafa;
-  --border: #e4e4e7;
-  --input: #e4e4e7;
-  --ring: #18181b;
+  --border: #27272a;
+  --input: #27272a;
+  --ring: #a855f7;
 
   font-family:
     "Inter",
@@ -31,12 +31,12 @@
     "Segoe UI",
     sans-serif;
   color: var(--foreground);
-  background-color: #ffffff;
+  background-color: #050505;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  color-scheme: light;
+  color-scheme: dark;
 }
 
 * {
@@ -48,8 +48,8 @@ html,
 body,
 #root {
   min-height: 100%;
-  background-color: #ffffff;
-  color: #09090b;
+  background-color: #050505;
+  color: #f4f4f5;
 }
 
 body {
@@ -66,7 +66,7 @@ textarea {
 
 /* React Flow custom light theme overrides */
 .react-flow__background {
-  background-color: #fafafa !important;
+  background-color: #050505 !important;
 }
 
 .react-flow__node {
@@ -76,28 +76,32 @@ textarea {
 .react-flow__handle {
   width: 8px !important;
   height: 8px !important;
-  background-color: #09090b !important;
+  background-color: #a855f7 !important;
   border: 2px solid #ffffff !important;
 }
 
 .react-flow__edge-path {
-  stroke: #cbd5e1 !important;
+  stroke: #4b5563 !important;
   stroke-width: 2px !important;
 }
 
 .react-flow__controls {
-  background-color: #ffffff !important;
-  border: 1px solid #e4e4e7 !important;
-  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1) !important;
+  background-color: #09090b !important;
+  border: 1px solid #27272a !important;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.35) !important;
   border-radius: 6px !important;
 }
 
+.react-flow__controls svg {
+  fill: currentColor !important;
+}
+
 .react-flow__controls-button {
-  border-bottom: 1px solid #e4e4e7 !important;
-  color: #09090b !important;
+  border-bottom: 1px solid #27272a !important;
+  color: #f4f4f5 !important;
   fill: currentColor !important;
 }
 
 .react-flow__controls-button:hover {
-  background-color: #f4f4f5 !important;
+  background-color: #18181b !important;
 }

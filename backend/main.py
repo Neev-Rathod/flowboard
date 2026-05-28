@@ -7,8 +7,8 @@ from sqlalchemy.orm import Session
 
 from database import Base, SessionLocal, engine
 from dependencies import get_db, get_current_user
-from models import User
-from schemas import AuthResponse, UserCreate, UserLogin, UserOut
+from models import Company, User
+from schemas import AuthResponse, OrganizationCreate, UserCreate, UserLogin, UserOut
 from security import create_access_token, get_password_hash, verify_password
 from seed import ensure_demo_seed
 
@@ -138,6 +138,52 @@ def register_user(payload: UserCreate, db: Session = Depends(get_db)):
 
     token = create_access_token({"sub": str(user.id), "username": user.username})
     return build_auth_response(user, token)
+
+
+@app.post("/auth/register-organization", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+def register_organization(payload: OrganizationCreate, db: Session = Depends(get_db)):
+    organization_name = payload.organization_name.strip()
+    admin_username = payload.admin_username.strip()
+    admin_email = payload.admin_email.strip()
+
+    if not organization_name:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization name is required")
+
+    existing_company = db.query(Company).filter(Company.name == organization_name).first()
+    if existing_company is not None:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Organization already exists")
+
+    existing_user = (
+        db.query(User)
+        .filter(or_(User.username == admin_username, User.email == admin_email))
+        .first()
+    )
+    if existing_user is not None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Username or email already exists",
+        )
+
+    company = Company(name=organization_name)
+    db.add(company)
+    db.flush()
+
+    admin = User(
+        username=admin_username,
+        email=admin_email,
+        password_hash=get_password_hash(payload.password),
+        role="admin",
+        job_title="Admin",
+        company_id=company.id,
+        manager_id=None,
+        is_attached=True,
+    )
+    db.add(admin)
+    db.commit()
+    db.refresh(admin)
+
+    token = create_access_token({"sub": str(admin.id), "username": admin.username})
+    return build_auth_response(admin, token)
 
 
 @app.post("/auth/login", response_model=AuthResponse)

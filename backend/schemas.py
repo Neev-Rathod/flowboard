@@ -38,6 +38,13 @@ class AuthResponse(BaseModel):
     user: UserOut
 
 
+class OrganizationCreate(BaseModel):
+    organization_name: str
+    admin_username: str
+    admin_email: str
+    password: str
+
+
 # Workflow schemas
 class TaskBase(BaseModel):
     title: str

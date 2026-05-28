@@ -147,7 +147,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
 
   if (error) {
     return (
-      <div className="rounded-2xl border border-rose-200 bg-rose-50 p-4 text-sm text-rose-700">
+      <div className="rounded-2xl border border-rose-900/50 bg-rose-950/60 p-4 text-sm text-rose-200">
         {error}
       </div>
     );
@@ -156,29 +156,29 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-950">
-          <Inbox className="h-5 w-5 text-zinc-500" />
+        <h2 className="flex items-center gap-2 text-lg font-semibold text-zinc-50">
+          <Inbox className="h-5 w-5 text-zinc-400" />
           My Work Board
         </h2>
         <Badge
           variant="outline"
-          className="rounded-full border-zinc-200 bg-zinc-50 text-zinc-700"
+          className="rounded-full border-zinc-700 bg-zinc-900 text-zinc-200"
         >
           {tasks.length} assigned {tasks.length === 1 ? "task" : "tasks"}
         </Badge>
       </div>
 
       {tasks.length === 0 ? (
-        <Card className="border-zinc-200 bg-zinc-50 shadow-sm">
+        <Card className="border-zinc-800 bg-zinc-950 shadow-sm">
           <CardContent className="flex flex-col items-center justify-center space-y-3 p-8 text-center">
-            <div className="rounded-full bg-emerald-50 p-3 text-emerald-600">
+            <div className="rounded-full bg-emerald-950/60 p-3 text-emerald-300">
               <CheckCircle2 className="h-6 w-6" />
             </div>
             <div>
-              <p className="text-sm font-medium text-zinc-950">
+              <p className="text-sm font-medium text-zinc-50">
                 All caught up!
               </p>
-              <p className="mt-1 max-w-xs text-xs text-zinc-500">
+              <p className="mt-1 max-w-xs text-xs text-zinc-400">
                 No active tasks are assigned to you in the current stage of any
                 running workflows.
               </p>
@@ -219,16 +219,16 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
               <KanbanColumn key={column.id} value={column.id}>
                 <KanbanColumnHandle>
                   <div>
-                    <h3 className="text-sm font-semibold tracking-tight text-zinc-950">
+                    <h3 className="text-sm font-semibold tracking-tight text-zinc-50">
                       {column.title}
                     </h3>
-                    <p className="text-xs text-zinc-500">
+                    <p className="text-xs text-zinc-400">
                       {column.description}
                     </p>
                   </div>
                   <Badge
                     variant="outline"
-                    className="rounded-full border-zinc-200 bg-white text-zinc-700"
+                    className="rounded-full border-zinc-700 bg-zinc-900 text-zinc-200"
                   >
                     {groupedColumns[column.id]?.length || 0}
                   </Badge>
@@ -251,18 +251,18 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                             <div className="space-y-1">
                               {canDrag ? (
                                 <KanbanItemHandle>
-                                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-zinc-400">
+                                  <div className="flex items-center gap-2 text-[10px] uppercase tracking-wide text-zinc-500">
                                     <GripVertical className="h-3.5 w-3.5" />
                                     Drag card
                                   </div>
                                 </KanbanItemHandle>
                               ) : null}
                               <div className="flex flex-wrap items-center gap-2">
-                                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-700">
+                                <span className="text-xs font-semibold uppercase tracking-wide text-zinc-200">
                                   {task.workflow_title}
                                 </span>
-                                <ChevronRight className="h-3 w-3 text-zinc-400" />
-                                <span className="text-xs font-medium text-zinc-500">
+                                <ChevronRight className="h-3 w-3 text-zinc-500" />
+                                <span className="text-xs font-medium text-zinc-400">
                                   {task.stage_title}
                                 </span>
                                 <Badge
@@ -290,25 +290,25 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                             </Badge>
                           </div>
 
-                          <h3 className="text-sm font-semibold tracking-tight text-zinc-950">
+                          <h3 className="text-sm font-semibold tracking-tight text-zinc-50">
                             {task.title}
                           </h3>
 
                           {task.description ? (
-                            <p className="max-w-xl text-xs leading-relaxed text-zinc-500">
+                            <p className="max-w-xl text-xs leading-relaxed text-zinc-400">
                               {task.description}
                             </p>
                           ) : null}
 
                           {task.due_date ? (
-                            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-400">
+                            <p className="text-[11px] uppercase tracking-[0.2em] text-zinc-500">
                               Due {new Date(task.due_date).toLocaleDateString()}
                             </p>
                           ) : null}
 
                           {task.notes ? (
-                            <p className="max-w-xl rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs leading-relaxed text-zinc-600">
-                              <span className="font-semibold uppercase tracking-wide text-zinc-400">
+                            <p className="max-w-xl rounded-xl border border-zinc-800 bg-zinc-900 px-3 py-2 text-xs leading-relaxed text-zinc-300">
+                              <span className="font-semibold uppercase tracking-wide text-zinc-500">
                                 Note
                               </span>{" "}
                               {task.notes}
@@ -326,7 +326,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
                               }
                               placeholder="Add a completion note or relevant update"
                               rows={3}
-                              className="w-full rounded-2xl border border-zinc-200 bg-zinc-50 px-3 py-2 text-xs text-zinc-900 outline-none transition focus:border-zinc-400 focus:bg-white"
+                              className="w-full rounded-2xl border border-zinc-800 bg-zinc-950 px-3 py-2 text-xs text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-violet-500/50 focus:bg-zinc-950"
                             />
                           ) : null}
 
@@ -367,7 +367,7 @@ export function MyTaskBoard({ apiBase, token, onTaskCompleted }) {
 
           <KanbanOverlay>
             <div className="flex h-full items-start justify-center pt-24">
-              <div className="rounded-2xl border border-zinc-200 bg-white px-4 py-3 text-sm font-medium text-zinc-700 shadow-xl">
+              <div className="rounded-2xl border border-zinc-700 bg-zinc-950 px-4 py-3 text-sm font-medium text-zinc-200 shadow-xl">
                 Moving task...
               </div>
             </div>

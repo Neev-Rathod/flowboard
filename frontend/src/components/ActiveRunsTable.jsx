@@ -12,42 +12,42 @@ import {
 export function ActiveRunsTable({ workflows, onOpenWorkflow, loading }) {
   if (loading) {
     return (
-      <div className="rounded-xl border border-zinc-200 bg-white p-4 text-sm text-zinc-500">
+      <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400">
         Loading active workflows...
       </div>
     );
   }
 
   return (
-    <Card className="border-zinc-200 shadow-sm">
+    <Card className="border-zinc-800 bg-zinc-950/90 shadow-[0_24px_100px_-45px_rgba(0,0,0,0.85)] backdrop-blur-xl">
       <CardHeader>
-        <CardTitle className="text-lg">Active workflows</CardTitle>
+        <CardTitle className="text-lg text-zinc-50">Active workflows</CardTitle>
         <CardDescription>
           Open a workflow and jump directly into its board.
         </CardDescription>
       </CardHeader>
       <CardContent>
         {workflows.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-500">
+          <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950 px-4 py-8 text-center text-sm text-zinc-400">
             No active workflows yet.
           </div>
         ) : (
-          <div className="overflow-hidden rounded-xl border border-zinc-200">
-            <table className="w-full divide-y divide-zinc-200 text-left text-sm">
-              <thead className="bg-zinc-50 text-xs uppercase tracking-wide text-zinc-500">
+          <div className="overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950">
+            <table className="w-full divide-y divide-zinc-800 text-left text-sm">
+              <thead className="bg-zinc-900 text-xs uppercase tracking-wide text-zinc-400">
                 <tr>
                   <th className="px-4 py-3 font-medium">Workflow</th>
                   <th className="px-4 py-3 font-medium text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-zinc-200 bg-white">
+              <tbody className="divide-y divide-zinc-800 bg-zinc-950">
                 {workflows.map((workflow) => (
-                  <tr key={workflow.id} className="hover:bg-zinc-50/80">
+                  <tr key={workflow.id} className="hover:bg-zinc-900/70">
                     <td className="px-4 py-3">
-                      <div className="font-medium text-zinc-950">
+                      <div className="font-medium text-zinc-50">
                         {workflow.title}
                       </div>
-                      <div className="text-xs text-zinc-500">
+                      <div className="text-xs text-zinc-400">
                         {workflow.stages?.length || 0} stages
                       </div>
                     </td>

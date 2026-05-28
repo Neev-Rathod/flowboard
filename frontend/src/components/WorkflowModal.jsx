@@ -194,14 +194,14 @@ function TaskEditorDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
         onClose={() => onClose(false)}
-        className="max-w-lg rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl"
+        className="max-w-lg rounded-2xl border-zinc-800 bg-zinc-950 p-0 shadow-2xl"
       >
-        <div className="border-b border-zinc-200 px-6 py-5">
+        <div className="border-b border-zinc-800 px-6 py-5">
           <DialogHeader className="text-left">
-            <DialogTitle className="text-xl font-semibold text-zinc-950">
+            <DialogTitle className="text-xl font-semibold text-zinc-50">
               {task ? "Edit task" : "Add task"}
             </DialogTitle>
-            <DialogDescription className="text-zinc-500">
+            <DialogDescription className="text-zinc-400">
               {stageTitle
                 ? `Add details for ${stageTitle}.`
                 : "Define the task details for this stage."}
@@ -211,7 +211,7 @@ function TaskEditorDialog({
 
         <div className="space-y-4 p-6">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Task title
             </label>
             <Input
@@ -221,7 +221,7 @@ function TaskEditorDialog({
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Description
             </label>
             <Input
@@ -234,7 +234,7 @@ function TaskEditorDialog({
           </div>
           <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Assignee
               </label>
               <Select
@@ -255,7 +255,7 @@ function TaskEditorDialog({
               </Select>
             </div>
             <div className="space-y-2">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Priority
               </label>
               <Select
@@ -272,7 +272,7 @@ function TaskEditorDialog({
               </Select>
             </div>
             <div className="space-y-2 md:col-span-2">
-              <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+              <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
                 Due date
               </label>
               <Input
@@ -286,7 +286,7 @@ function TaskEditorDialog({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-zinc-200 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-zinc-800 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
           {canDelete ? (
             <Button
               type="button"
@@ -343,14 +343,14 @@ function StageEditorDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent
         onClose={() => onClose(false)}
-        className="max-w-lg rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl"
+        className="max-w-lg rounded-2xl border-zinc-800 bg-zinc-950 p-0 shadow-2xl"
       >
-        <div className="border-b border-zinc-200 px-6 py-5">
+        <div className="border-b border-zinc-800 px-6 py-5">
           <DialogHeader className="text-left">
-            <DialogTitle className="text-xl font-semibold text-zinc-950">
+            <DialogTitle className="text-xl font-semibold text-zinc-50">
               Edit stage
             </DialogTitle>
-            <DialogDescription className="text-zinc-500">
+            <DialogDescription className="text-zinc-400">
               Update the stage title, color, and completion rule.
             </DialogDescription>
           </DialogHeader>
@@ -358,7 +358,7 @@ function StageEditorDialog({
 
         <div className="space-y-4 p-6">
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Stage title
             </label>
             <Input
@@ -368,7 +368,7 @@ function StageEditorDialog({
             />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Accent color
             </label>
             <Select
@@ -383,7 +383,7 @@ function StageEditorDialog({
             </Select>
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-medium uppercase tracking-wide text-zinc-500">
+            <label className="text-xs font-medium uppercase tracking-wide text-zinc-400">
               Completion rule
             </label>
             <Select
@@ -398,7 +398,7 @@ function StageEditorDialog({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3 border-t border-zinc-200 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-col gap-3 border-t border-zinc-800 px-6 pb-6 pt-4 sm:flex-row sm:items-center sm:justify-between">
           {canDelete ? (
             <Button
               type="button"
@@ -542,21 +542,21 @@ function WorkflowModalEditor({
 
   return (
     <Dialog open onOpenChange={onOpenChange}>
-      <DialogContent className="h-[92vh] max-w-[98vw] overflow-hidden rounded-2xl border-zinc-200 bg-white p-0 shadow-2xl">
+      <DialogContent className="h-[92vh] max-w-[98vw] overflow-hidden rounded-2xl border-zinc-800 bg-zinc-950 p-0 shadow-2xl">
         <form onSubmit={submit} className="flex h-full flex-col">
-          <div className="flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3">
+          <div className="flex items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3">
             <DialogHeader className="text-left">
-              <DialogTitle className="text-lg font-semibold text-zinc-950">
+              <DialogTitle className="text-lg font-semibold text-zinc-50">
                 {workflow ? "Workflow canvas" : "Create workflow canvas"}
               </DialogTitle>
-              <DialogDescription className="text-zinc-500">
+              <DialogDescription className="text-zinc-400">
                 Drag nodes like a board, then use the node controls to add or
                 edit tasks.
               </DialogDescription>
             </DialogHeader>
 
             <div className="min-w-[18rem] max-w-md space-y-2">
-              <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
+              <label className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
                 Workflow title
               </label>
               <Input
@@ -568,7 +568,7 @@ function WorkflowModalEditor({
                   }))
                 }
                 placeholder="Name this workflow"
-                className="h-11 rounded-2xl border-zinc-200 bg-zinc-50 text-sm text-zinc-950"
+                className="h-11 rounded-2xl border-zinc-800 bg-zinc-950 text-sm text-zinc-50 placeholder:text-zinc-500"
               />
             </div>
 
@@ -597,12 +597,12 @@ function WorkflowModalEditor({
               }}
             />
 
-            <div className="pointer-events-none absolute left-8 top-8 rounded-full border border-zinc-200 bg-white/90 px-3 py-1 text-xs text-zinc-500 shadow-sm backdrop-blur">
+            <div className="pointer-events-none absolute left-8 top-8 rounded-full border border-zinc-800 bg-zinc-950/90 px-3 py-1 text-xs text-zinc-400 shadow-sm backdrop-blur">
               Canvas mode
             </div>
           </div>
 
-          <div className="flex items-center justify-end gap-2 border-t border-zinc-200 px-4 py-3">
+          <div className="flex items-center justify-end gap-2 border-t border-zinc-800 px-4 py-3">
             <Button
               type="button"
               variant="outline"

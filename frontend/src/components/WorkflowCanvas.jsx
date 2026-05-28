@@ -1,10 +1,10 @@
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Background,
-  Controls,
   Handle,
   Position,
   ReactFlow,
+  useReactFlow,
   useEdgesState,
   useNodesState,
 } from "@xyflow/react";
@@ -33,26 +33,26 @@ function WorkflowNode({ data, selected, onAddTask }) {
   const canAddTask = data.kind === "stage" && typeof onAddTask === "function";
   const statusTone =
     data.status === "completed"
-      ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+      ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
       : data.status === "in-progress"
-        ? "bg-sky-500/10 text-sky-700 border-sky-500/20"
+        ? "bg-sky-500/10 text-sky-300 border-sky-500/20"
         : data.status === "backlog"
-          ? "bg-rose-500/10 text-rose-700 border-rose-500/20"
+          ? "bg-rose-500/10 text-rose-300 border-rose-500/20"
           : data.status === "todo"
-            ? "bg-zinc-100 text-zinc-700 border-zinc-200"
+            ? "bg-zinc-900 text-zinc-300 border-zinc-700"
             : data.status === "done"
-              ? "bg-emerald-500/10 text-emerald-700 border-emerald-500/20"
+              ? "bg-emerald-500/10 text-emerald-300 border-emerald-500/20"
               : data.status === "pending"
-                ? "bg-amber-500/10 text-amber-700 border-amber-500/20"
-                : "bg-zinc-100 text-zinc-700 border-zinc-200";
+                ? "bg-amber-500/10 text-amber-300 border-amber-500/20"
+                : "bg-zinc-900 text-zinc-300 border-zinc-700";
 
   return (
     <div
       className={[
-        "relative w-[220px] overflow-hidden rounded-xl border bg-white shadow-sm transition-all cursor-grab active:cursor-grabbing",
+        "relative w-[220px] overflow-hidden rounded-xl border border-zinc-800 bg-zinc-950 shadow-sm transition-all cursor-grab active:cursor-grabbing",
         selected
-          ? "border-zinc-900 ring-2 ring-zinc-900/10"
-          : "border-zinc-200",
+          ? "ring-2 ring-violet-500/20"
+          : "",
       ].join(" ")}
     >
       <div
@@ -83,20 +83,20 @@ function WorkflowNode({ data, selected, onAddTask }) {
             </span>
           ) : null}
         </div>
-        <p className="line-clamp-2 text-sm font-semibold text-zinc-950">
+        <p className="line-clamp-2 text-sm font-semibold text-zinc-50">
           {data.title}
         </p>
-        <p className="line-clamp-3 text-[11px] leading-relaxed text-zinc-500">
+        <p className="line-clamp-3 text-[11px] leading-relaxed text-zinc-400">
           {data.description}
         </p>
         {data.progress ? (
-          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+          <p className="text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
             {data.progress}
           </p>
         ) : null}
         {data.note ? (
-          <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-2 py-1.5 text-[11px] leading-relaxed text-zinc-600">
-            <span className="mr-1 font-semibold uppercase tracking-wide text-zinc-400">
+          <div className="rounded-lg border border-zinc-800 bg-zinc-900 px-2 py-1.5 text-[11px] leading-relaxed text-zinc-300">
+            <span className="mr-1 font-semibold uppercase tracking-wide text-zinc-500">
               Note
             </span>
             <span className="line-clamp-3">{data.note}</span>
@@ -116,7 +116,7 @@ function WorkflowNode({ data, selected, onAddTask }) {
             event.stopPropagation();
             onAddTask(data.stageId);
           }}
-          className="nodrag absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-zinc-200 bg-white text-zinc-700 shadow-sm transition-colors hover:bg-zinc-900 hover:text-white"
+          className="nodrag absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full border border-zinc-700 bg-zinc-900 text-zinc-200 shadow-sm transition-colors hover:border-violet-500/40 hover:bg-zinc-800 hover:text-white"
         >
           +
         </button>
@@ -127,8 +127,8 @@ function WorkflowNode({ data, selected, onAddTask }) {
         style={{
           width: 10,
           height: 10,
-          background: "#09090b",
-          border: "2px solid #ffffff",
+          background: "#a855f7",
+          border: "2px solid #09090b",
         }}
       />
       <Handle
@@ -137,8 +137,8 @@ function WorkflowNode({ data, selected, onAddTask }) {
         style={{
           width: 10,
           height: 10,
-          background: "#09090b",
-          border: "2px solid #ffffff",
+          background: "#a855f7",
+          border: "2px solid #09090b",
         }}
       />
     </div>
@@ -156,22 +156,22 @@ function PlaceholderNode({ data, selected, onCreate }) {
         onCreate?.(data.stageId);
       }}
       className={[
-        "relative flex h-[92px] w-[220px] items-center justify-center rounded-xl border border-dashed bg-white/90 px-4 text-left shadow-sm transition-all cursor-pointer",
+        "relative flex h-[92px] w-[220px] items-center justify-center rounded-xl border border-dashed border-zinc-700 bg-zinc-950 px-4 text-left shadow-sm transition-all cursor-pointer",
         selected
-          ? "border-zinc-900 ring-2 ring-zinc-900/10"
-          : "border-zinc-200",
-        canCreate ? "hover:border-zinc-900 hover:bg-zinc-50" : "opacity-70",
+          ? "ring-2 ring-violet-500/20"
+          : "",
+        canCreate ? "hover:border-violet-500/40 hover:bg-zinc-900" : "opacity-70",
       ].join(" ")}
       aria-label={data.label}
       disabled={!canCreate}
     >
       <div className="flex items-center gap-3">
-        <div className="grid h-9 w-9 place-items-center rounded-full border border-zinc-200 bg-zinc-50 text-lg font-semibold text-zinc-900">
+        <div className="grid h-9 w-9 place-items-center rounded-full border border-zinc-700 bg-zinc-900 text-lg font-semibold text-zinc-50">
           +
         </div>
         <div>
-          <p className="text-sm font-semibold text-zinc-950">{data.title}</p>
-          <p className="text-xs text-zinc-500">{data.description}</p>
+          <p className="text-sm font-semibold text-zinc-50">{data.title}</p>
+          <p className="text-xs text-zinc-400">{data.description}</p>
         </div>
       </div>
       <Handle
@@ -180,11 +180,78 @@ function PlaceholderNode({ data, selected, onCreate }) {
         style={{
           width: 10,
           height: 10,
-          background: "#09090b",
-          border: "2px solid #ffffff",
+          background: "#a855f7",
+          border: "2px solid #09090b",
         }}
       />
     </button>
+  );
+}
+
+function ZoomSliderControl() {
+  const { zoomIn, zoomOut, fitView, getZoom, getViewport, setViewport } = useReactFlow();
+  const [zoom, setZoom] = useState(() => Math.round(getZoom() * 100));
+
+  const syncZoom = () => {
+    // Small timeout to allow transition to complete
+    setTimeout(() => {
+      setZoom(Math.round(getZoom() * 100));
+    }, 130);
+  };
+
+  const commitZoom = (value) => {
+    const nextZoom = Number(value) / 100;
+    setZoom(Number(value));
+    const viewport = getViewport();
+    setViewport({ x: viewport.x, y: viewport.y, zoom: nextZoom });
+  };
+
+  return (
+    <div className="pointer-events-auto absolute bottom-4 right-4 z-20 flex items-center gap-2 rounded-2xl border border-zinc-800 bg-black/95 px-3 py-2 shadow-xl backdrop-blur">
+      <button
+        type="button"
+        onClick={() => {
+          zoomOut({ duration: 120 });
+          syncZoom();
+        }}
+        className="grid h-8 w-8 place-items-center rounded-lg border border-zinc-800 bg-black text-white hover:bg-zinc-900 hover:border-zinc-700 transition"
+        aria-label="Zoom out"
+      >
+        -
+      </button>
+      <input
+        type="range"
+        min="45"
+        max="120"
+        step="1"
+        value={zoom}
+        onChange={(event) => commitZoom(event.target.value)}
+        className="h-2 w-40 cursor-pointer appearance-none rounded-full bg-zinc-800 accent-violet-500"
+        aria-label="Zoom slider"
+      />
+      <button
+        type="button"
+        onClick={() => {
+          zoomIn({ duration: 120 });
+          syncZoom();
+        }}
+        className="grid h-8 w-8 place-items-center rounded-lg border border-zinc-800 bg-black text-white hover:bg-zinc-900 hover:border-zinc-700 transition"
+        aria-label="Zoom in"
+      >
+        +
+      </button>
+      <button
+        type="button"
+        onClick={() => {
+          fitView({ duration: 200, padding: 0.2 });
+          syncZoom();
+        }}
+        className="ml-1 rounded-lg border border-zinc-800 bg-black px-3 py-1.5 text-xs font-semibold text-white hover:bg-zinc-900 hover:border-zinc-700 transition"
+        aria-label="Fit page"
+      >
+        Fit
+      </button>
+    </div>
   );
 }
 
@@ -399,14 +466,14 @@ export function WorkflowCanvas({
 
   if (!workflow) {
     return (
-      <div className="flex h-[520px] items-center justify-center rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 text-sm text-zinc-500">
+      <div className="flex h-[520px] items-center justify-center rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 text-sm text-zinc-400">
         Select a workflow to preview its flowchart.
       </div>
     );
   }
 
   return (
-    <div className="h-[560px] overflow-hidden rounded-2xl border border-zinc-200 bg-[radial-gradient(circle_at_1px_1px,_rgba(24,24,27,0.10)_1px,_transparent_0)] bg-[size:18px_18px] p-3">
+    <div className="h-[560px] overflow-hidden rounded-2xl border border-zinc-800 bg-[radial-gradient(circle_at_1px_1px,_rgba(161,161,170,0.14)_1px,_transparent_0)] bg-[size:18px_18px] p-3">
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -425,12 +492,8 @@ export function WorkflowCanvas({
         minZoom={0.45}
         maxZoom={1.2}
       >
-        <Background variant="dots" gap={18} size={1} color="#d4d4d8" />
-        <Controls
-          position="bottom-right"
-          showInteractive={false}
-          className="!border-zinc-200 !bg-white !shadow-sm"
-        />
+        <Background variant="dots" gap={18} size={1} color="#3f3f46" />
+        <ZoomSliderControl />
       </ReactFlow>
     </div>
   );

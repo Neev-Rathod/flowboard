@@ -5,7 +5,7 @@ export function Separator({ className, orientation = "horizontal", ...props }) {
     <div
       role="separator"
       className={cn(
-        "shrink-0 bg-zinc-200",
+        "shrink-0 bg-zinc-800",
         orientation === "horizontal" ? "h-px w-full" : "h-full w-px",
         className,
       )}

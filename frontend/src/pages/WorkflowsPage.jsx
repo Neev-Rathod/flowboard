@@ -85,6 +85,10 @@ export function WorkflowsPage() {
     setModalOpen(true);
   };
 
+  const openBoard = (workflowId) => {
+    window.location.assign(`/workflows/${workflowId}/board`);
+  };
+
   const removeStages = async (workflow) => {
     for (const stage of workflow.stages || []) {
       await fetch(`${apiBase}/workflows/stages/${stage.id}`, {
@@ -194,21 +198,21 @@ export function WorkflowsPage() {
   };
 
   return (
-    <main className="flex h-full min-h-0 flex-col gap-6">
-      <Card className="border-zinc-200 bg-white shadow-sm">
+    <main className="flex h-full min-h-0 flex-col gap-6 bg-[#050505]">
+      <Card className="border-zinc-800 bg-zinc-950/90 shadow-[0_30px_120px_-60px_rgba(0,0,0,0.9)] backdrop-blur-xl">
         <CardHeader className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div className="space-y-2">
             <Badge
               variant="secondary"
-              className="w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-700"
+              className="w-fit rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-wide text-zinc-200"
             >
               Workflow templates
             </Badge>
-            <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-zinc-950">
-              <WorkflowIcon className="h-6 w-6 text-zinc-500" />
+            <CardTitle className="flex items-center gap-2 text-2xl font-semibold text-zinc-50">
+              <WorkflowIcon className="h-6 w-6 text-violet-300" />
               Workflow builder
             </CardTitle>
-            <CardDescription className="max-w-2xl text-sm text-zinc-600">
+            <CardDescription className="max-w-2xl text-sm text-zinc-400">
               Create reusable templates, shape linear and branched stages, and
               inspect each flow on a live dot-grid canvas.
             </CardDescription>
@@ -222,78 +226,96 @@ export function WorkflowsPage() {
       </Card>
 
       <div className="grid min-h-0 flex-1 gap-6 xl:grid-cols-[340px_minmax(0,1fr)]">
-        <Card className="flex min-h-0 flex-col border-zinc-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-zinc-200">
-            <CardTitle className="flex items-center gap-2 text-lg text-zinc-950">
-              <Layers3 className="h-5 w-5 text-zinc-500" />
+        <Card className="flex min-h-0 flex-col border-zinc-800 bg-zinc-950/90 shadow-[0_24px_100px_-45px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          <CardHeader className="border-b border-zinc-800">
+            <CardTitle className="flex items-center gap-2 text-lg text-zinc-50">
+              <Layers3 className="h-5 w-5 text-violet-300" />
               Your workflows
             </CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-zinc-400">
               Select a template to inspect its canvas and edit it.
             </CardDescription>
           </CardHeader>
           <CardContent className="min-h-0 flex-1 space-y-4 overflow-y-auto pt-4">
             {loading ? (
-              <div className="rounded-xl border border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
+              <div className="rounded-xl border border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400">
                 Loading workflows...
               </div>
             ) : workflows.length === 0 ? (
-              <div className="rounded-xl border border-dashed border-zinc-200 bg-zinc-50 p-6 text-center text-sm text-zinc-500">
+              <div className="rounded-xl border border-dashed border-zinc-800 bg-zinc-950 p-6 text-center text-sm text-zinc-400">
                 No workflows yet. Create the first template to start building
                 branches.
               </div>
             ) : (
               workflows.map((workflow) => (
-                <button
+                <div
                   key={workflow.id}
-                  type="button"
+                  role="button"
+                  tabIndex={0}
                   onClick={() => {
                     setSelectedWorkflowId(workflow.id);
                     setSelectedNode(null);
                   }}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      setSelectedWorkflowId(workflow.id);
+                      setSelectedNode(null);
+                    }
+                  }}
                   className={[
-                    "w-full rounded-2xl border p-4 text-left transition-all",
+                    "w-full rounded-2xl border p-4 text-left transition-all cursor-pointer space-y-3 block",
                     selectedWorkflowId === workflow.id
-                      ? "border-zinc-900 bg-zinc-50 shadow-sm"
-                      : "border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50",
+                      ? "border-violet-500/40 bg-zinc-900 shadow-sm ring-1 ring-violet-500/10"
+                      : "border-zinc-800 bg-zinc-950 hover:border-violet-500/30 hover:bg-zinc-900",
                   ].join(" ")}
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-2">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="text-sm font-semibold text-zinc-950">
+                        <h3 className="text-sm font-semibold text-zinc-50">
                           {workflow.title}
                         </h3>
                         {workflow.is_template ? (
                           <Badge
                             variant="secondary"
-                            className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-700"
+                            className="rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-200"
                           >
                             template
                           </Badge>
                         ) : null}
                       </div>
-                      <p className="text-xs leading-relaxed text-zinc-500">
+                      <p className="text-xs leading-relaxed text-zinc-400">
                         {workflow.description || "No description provided."}
                       </p>
                     </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      onClick={(event) => {
-                        event.stopPropagation();
-                        openEdit(workflow);
-                      }}
-                    >
-                      <PencilLine className="h-4 w-4" />
-                      Edit
-                    </Button>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openEdit(workflow);
+                        }}
+                        className="border-zinc-700 bg-zinc-900 text-zinc-100 hover:bg-zinc-800"
+                        title="Edit workflow"
+                      >
+                        <PencilLine className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          openBoard(workflow.id);
+                        }}
+                        className="bg-violet-600 hover:bg-violet-500 text-white font-medium text-xs px-3 rounded-lg"
+                      >
+                        Open Board
+                      </Button>
+                    </div>
                   </div>
-
-                  <Separator className="my-3 bg-zinc-200" />
-
-                  <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-zinc-500">
+                  <div className="flex flex-wrap items-center gap-2 text-[11px] uppercase tracking-[0.2em] text-zinc-500 pt-2 border-t border-zinc-800/40">
                     <span>{workflow.stages?.length || 0} stages</span>
                     <span>•</span>
                     <span>
@@ -304,18 +326,18 @@ export function WorkflowsPage() {
                       tasks
                     </span>
                   </div>
-                </button>
+                </div>
               ))
             )}
           </CardContent>
         </Card>
 
-        <Card className="flex min-h-0 flex-col border-zinc-200 bg-white shadow-sm">
-          <CardHeader className="border-b border-zinc-200">
-            <CardTitle className="text-lg text-zinc-950">
+        <Card className="flex min-h-0 flex-col border-zinc-800 bg-zinc-950/90 shadow-[0_24px_100px_-45px_rgba(0,0,0,0.85)] backdrop-blur-xl">
+          <CardHeader className="border-b border-zinc-800">
+            <CardTitle className="text-lg text-zinc-50">
               Canvas preview
             </CardTitle>
-            <CardDescription className="text-zinc-500">
+            <CardDescription className="text-zinc-400">
               Click nodes to inspect task metadata and stage branching.
             </CardDescription>
           </CardHeader>
@@ -328,7 +350,7 @@ export function WorkflowsPage() {
             />
 
             {selectedNode ? (
-              <div className="rounded-2xl border border-zinc-200 bg-zinc-50 p-4">
+              <div className="rounded-2xl border border-zinc-800 bg-zinc-950 p-4">
                 <div className="flex flex-wrap items-center gap-2">
                   <Badge
                     variant="outline"
@@ -344,40 +366,40 @@ export function WorkflowsPage() {
                       {selectedNode.data.status}
                     </Badge>
                   ) : null}
-                  <span className="text-sm font-semibold text-zinc-950">
+                  <span className="text-sm font-semibold text-zinc-50">
                     {selectedNode.data?.title}
                   </span>
                 </div>
-                <p className="mt-2 text-sm text-zinc-600">
+                <p className="mt-2 text-sm text-zinc-400">
                   {selectedNode.data?.details || selectedNode.data?.description}
                 </p>
                 {selectedNode.data?.progress ? (
-                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                  <p className="mt-2 text-xs font-semibold uppercase tracking-[0.2em] text-zinc-500">
                     {selectedNode.data.progress}
                   </p>
                 ) : null}
-                <div className="mt-3 grid gap-2 text-sm text-zinc-600 sm:grid-cols-2">
+                <div className="mt-3 grid gap-2 text-sm text-zinc-400 sm:grid-cols-2">
                   <div className="flex items-center justify-between gap-3">
                     <span>Type</span>
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-100">
                       {selectedNode.data?.kind || "node"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>Accent</span>
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-100">
                       {selectedNode.data?.accent || "#18181b"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>Stage</span>
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-100">
                       {selectedNode.data?.stageTitle || "—"}
                     </span>
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>Assignee</span>
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-100">
                       {selectedNode.data?.assigneeName ||
                         selectedNode.data?.meta ||
                         "—"}
@@ -385,7 +407,7 @@ export function WorkflowsPage() {
                   </div>
                   <div className="flex items-center justify-between gap-3">
                     <span>Job title</span>
-                    <span className="font-medium text-zinc-900">
+                    <span className="font-medium text-zinc-100">
                       {selectedNode.data?.assigneeTitle || "—"}
                     </span>
                   </div>
@@ -393,19 +415,19 @@ export function WorkflowsPage() {
                     <>
                       <div className="flex items-center justify-between gap-3">
                         <span>Priority</span>
-                        <span className="font-medium text-zinc-900">
+                        <span className="font-medium text-zinc-100">
                           {selectedNode.data?.priority || "normal"}
                         </span>
                       </div>
                       <div className="flex items-center justify-between gap-3">
                         <span>Due date</span>
-                        <span className="font-medium text-zinc-900">
+                        <span className="font-medium text-zinc-100">
                           {selectedNode.data?.dueDate || "—"}
                         </span>
                       </div>
                       {selectedNode.data?.note ? (
-                        <div className="sm:col-span-2 rounded-xl border border-zinc-200 bg-white p-3 text-xs leading-relaxed text-zinc-600">
-                          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-400">
+                        <div className="sm:col-span-2 rounded-xl border border-zinc-800 bg-zinc-900 p-3 text-xs leading-relaxed text-zinc-300">
+                          <span className="mb-1 block text-[10px] font-semibold uppercase tracking-[0.2em] text-zinc-500">
                             Note
                           </span>
                           {selectedNode.data.note}
@@ -415,7 +437,7 @@ export function WorkflowsPage() {
                   ) : (
                     <div className="flex items-center justify-between gap-3 sm:col-span-2">
                       <span>Tasks</span>
-                      <span className="font-medium text-zinc-900">
+                      <span className="font-medium text-zinc-100">
                         {selectedNode.data?.taskCount ?? 0}
                       </span>
                     </div>
@@ -423,7 +445,7 @@ export function WorkflowsPage() {
                 </div>
               </div>
             ) : (
-              <div className="rounded-2xl border border-dashed border-zinc-200 bg-zinc-50 p-4 text-sm text-zinc-500">
+              <div className="rounded-2xl border border-dashed border-zinc-800 bg-zinc-950 p-4 text-sm text-zinc-400">
                 Select a node to inspect its details here.
               </div>
             )}

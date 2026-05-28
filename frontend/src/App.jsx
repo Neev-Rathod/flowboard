@@ -4,9 +4,10 @@ import { AppShell } from "./components/AppShell";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthProvider } from "./context/AuthContext";
 import { DashboardPage } from "./pages/DashboardPage";
+import { LandingPage } from "./pages/LandingPage";
 import { LoginPage } from "./pages/LoginPage";
-import { RunBoardPage } from "./pages/RunBoardPage";
 import { OrganizationPage } from "./pages/OrganizationPage";
+import { WorkflowBoardPage } from "./pages/WorkflowBoardPage";
 import { WorkflowsPage } from "./pages/WorkflowsPage";
 import { TasksPage } from "./pages/TasksPage";
 
@@ -15,6 +16,7 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          <Route path="/" element={<LandingPage />} />
           <Route path="/login" element={<LoginPage />} />
           <Route
             element={
@@ -23,13 +25,12 @@ function App() {
               </ProtectedRoute>
             }
           >
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
             <Route path="/dashboard" element={<DashboardPage />} />
             <Route path="/tasks" element={<TasksPage />} />
             <Route path="/workflows" element={<WorkflowsPage />} />
             <Route
               path="/workflows/:workflowId/board"
-              element={<RunBoardPage />}
+              element={<WorkflowBoardPage />}
             />
             <Route path="/organization" element={<OrganizationPage />} />
             <Route path="*" element={<Navigate to="/dashboard" replace />} />

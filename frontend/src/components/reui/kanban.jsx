@@ -58,7 +58,7 @@ export function KanbanColumn({ value, className, children }) {
   return (
     <section
       className={cn(
-        "flex min-h-[18rem] flex-col rounded-3xl border border-zinc-200 bg-zinc-50 shadow-sm",
+        "flex min-h-[18rem] flex-col rounded-3xl border border-zinc-800 bg-zinc-950 shadow-sm",
         className,
       )}
     >
@@ -73,7 +73,7 @@ export function KanbanColumnHandle({ className, children }) {
   return (
     <div
       className={cn(
-        "flex items-center justify-between gap-3 border-b border-zinc-200 px-4 py-3",
+        "flex items-center justify-between gap-3 border-b border-zinc-800 px-4 py-3",
         className,
       )}
     >
@@ -146,13 +146,13 @@ export function KanbanItem({ value, disabled = false, className, children }) {
       onDragEnd={() => kanban?.clearDragState()}
       onClick={() => kanban?.onItemClick?.(value)}
       className={cn(
-        "rounded-2xl border border-zinc-200 bg-white p-3 shadow-sm transition-all",
+        "rounded-2xl border border-zinc-800 bg-zinc-950 p-3 text-zinc-50 shadow-sm transition-all",
         disabled
           ? "cursor-default opacity-75"
           : "cursor-grab active:cursor-grabbing",
         isDragging
-          ? "scale-[0.99] border-zinc-300 opacity-80"
-          : "hover:border-zinc-300 hover:shadow-md",
+          ? "scale-[0.99] border-zinc-700 opacity-80"
+          : "hover:border-zinc-700 hover:shadow-md",
         className,
       )}
       data-kanban-item={value}

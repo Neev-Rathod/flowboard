@@ -35,30 +35,50 @@ export default function DashboardSummary({ apiBase, token }) {
   }, [apiBase, token]);
 
   if (error) {
-    return <div className="text-sm text-rose-600">{error}</div>;
+    return <div className="text-sm text-rose-300">{error}</div>;
   }
 
   if (!summary) {
-    return <div className="text-sm text-zinc-500">Loading dashboard...</div>;
+    return <div className="text-sm text-zinc-400">Loading dashboard...</div>;
   }
 
   return (
-    <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-      {cards.map((card) => (
-        <Card key={card.key} className="border-zinc-200 bg-white shadow-sm">
-          <CardContent className="space-y-3 p-4">
-            <Badge
-              variant="outline"
-              className="w-fit rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide"
-            >
-              {card.label}
-            </Badge>
-            <div className="text-2xl font-semibold text-zinc-950">
-              {summary[card.key] ?? 0}
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+    <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-5">
+      {cards.map((card, index) => {
+        const value = summary[card.key] ?? 0;
+        const isPercent = card.key === "completion_percent";
+
+        return (
+          <Card
+            key={card.key}
+            className={[
+              "border-zinc-800 bg-zinc-950 shadow-sm",
+              index === 0 ? "md:col-span-2 xl:col-span-1" : "",
+            ].join(" ")}
+          >
+            <CardContent className="space-y-3 p-4">
+              <Badge
+                variant="outline"
+                className="w-fit rounded-full px-2.5 py-0.5 text-[10px] uppercase tracking-wide text-zinc-300"
+              >
+                {card.label}
+              </Badge>
+              <div className="text-3xl font-semibold text-zinc-50">
+                {value}
+                {isPercent ? "%" : ""}
+              </div>
+              <div className="h-1.5 overflow-hidden rounded-full bg-zinc-900">
+                <div
+                  className="h-full rounded-full bg-violet-500"
+                  style={{
+                    width: `${Math.min(100, Number(value) || 0)}%`,
+                  }}
+                />
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 }

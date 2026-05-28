@@ -48,18 +48,18 @@ function NodeCard({ data, selected }) {
   return (
     <div
       className={[
-        "relative w-[244px] overflow-hidden rounded-2xl border bg-white shadow-sm transition-all",
+            "relative w-[244px] overflow-hidden rounded-2xl border border-zinc-800 bg-zinc-950 shadow-sm transition-all",
         selected
-          ? "border-zinc-900 ring-2 ring-zinc-900/10"
-          : "border-zinc-200",
+            ? "ring-2 ring-violet-500/20"
+            : "",
       ].join(" ")}
     >
       <div className="flex items-start justify-between gap-3 border-b border-zinc-200 px-4 py-3">
         <div className="min-w-0 space-y-1">
-          <p className="truncate text-sm font-semibold text-zinc-950">
+          <p className="truncate text-sm font-semibold text-zinc-50">
             {data.username}
           </p>
-          <p className="truncate text-[11px] text-zinc-500">{data.jobTitle}</p>
+          <p className="truncate text-[11px] text-zinc-400">{data.jobTitle}</p>
         </div>
         <Badge
           variant="outline"
@@ -73,10 +73,10 @@ function NodeCard({ data, selected }) {
       </div>
 
       <div className="space-y-2 px-4 py-3">
-        <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-500">
+        <p className="line-clamp-2 text-[11px] leading-relaxed text-zinc-400">
           {data.email}
         </p>
-        <p className="text-[11px] text-zinc-500">
+        <p className="text-[11px] text-zinc-400">
           {data.managerName
             ? `Reports to ${data.managerName}`
             : "No manager assigned"}
@@ -89,8 +89,8 @@ function NodeCard({ data, selected }) {
         style={{
           width: 10,
           height: 10,
-          background: "#09090b",
-          border: "2px solid #ffffff",
+            background: "#a855f7",
+            border: "2px solid #09090b",
         }}
       />
       <Handle
@@ -99,8 +99,8 @@ function NodeCard({ data, selected }) {
         style={{
           width: 10,
           height: 10,
-          background: "#09090b",
-          border: "2px solid #ffffff",
+            background: "#a855f7",
+            border: "2px solid #09090b",
         }}
       />
     </div>
